@@ -9,26 +9,55 @@ Cross-project. Stack-agnostic. Works in any codebase.
 
 ## Installation
 
-### Option A: Load per session
+### Step 1: Clone the plugin
 
 ```bash
-claude --plugin-dir /path/to/astra
+git clone git@github.com:Prateek080/astra.git ~/astra
 ```
 
-### Option B: Install permanently
+This puts the plugin at `~/astra`. You can clone it anywhere — just remember the path.
+
+### Step 2: Use it in any project
+
+Navigate to your project and start Claude Code with the plugin loaded:
 
 ```bash
-# From inside any Claude Code session
-/plugin install /path/to/astra
+cd /path/to/your/project
+claude --plugin-dir ~/astra
 ```
 
-### Option C: Coordinator mode (parallel orchestration)
+That's it. All `/astra:*` commands, agents, MCP servers, and hooks are now available in the session.
+
+### Making it permanent
+
+To avoid typing `--plugin-dir` every time, add it to your shell config:
 
 ```bash
-claude --agent astra:coordinator --plugin-dir /path/to/astra
+# Add to ~/.zshrc or ~/.bashrc
+alias claude-astra='claude --plugin-dir ~/astra'
 ```
 
-Use this when a feature has independent phases that can run simultaneously. The coordinator spawns planner, implementer, reviewer, and debugger agents in parallel.
+Then use `claude-astra` instead of `claude` to start any session with Astra loaded.
+
+### Coordinator mode (advanced)
+
+For complex features that benefit from parallel agent orchestration:
+
+```bash
+claude --agent astra:coordinator --plugin-dir ~/astra
+```
+
+The coordinator runs as the main thread and can spawn planner, implementer, reviewer, and debugger agents simultaneously. Use this for large features with independent phases — otherwise, the standard commands are sufficient.
+
+### Verify installation
+
+After starting Claude Code with the plugin, run:
+
+```
+/help
+```
+
+You should see all Astra commands listed: `/astra:spec`, `/astra:plan`, `/astra:implement`, `/astra:review`, `/astra:ship`, `/astra:debug`.
 
 ---
 
