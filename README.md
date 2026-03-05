@@ -9,49 +9,56 @@ Cross-project. Stack-agnostic. Works in any codebase.
 
 ## Installation
 
-### Step 1: Clone the plugin
+### Option A: Install globally (recommended)
+
+Install Astra as a plugin available in every Claude Code session.
+
+**1. Add the marketplace:**
+
+```
+/plugin marketplace add Prateek080/astra
+```
+
+**2. Install the plugin:**
+
+```
+/plugin install astra
+```
+
+This installs Astra at user scope — it's available in every project automatically. No flags, no aliases.
+
+### Option B: Install per-project
+
+Install Astra for a specific project only. This adds it to the project's `.claude/plugins/` so teammates can share it.
+
+```
+/plugin install astra --scope project
+```
+
+If you haven't added the marketplace yet, do that first (see Option A, step 1).
+
+### Option C: Local development
+
+For contributing to Astra or testing changes locally:
 
 ```bash
 git clone git@github.com:Prateek080/astra.git ~/astra
-```
-
-This puts the plugin at `~/astra`. You can clone it anywhere — just remember the path.
-
-### Step 2: Use it in any project
-
-Navigate to your project and start Claude Code with the plugin loaded:
-
-```bash
-cd /path/to/your/project
 claude --plugin-dir ~/astra
 ```
-
-That's it. All `/astra:*` commands, agents, MCP servers, and hooks are now available in the session.
-
-### Making it permanent
-
-To avoid typing `--plugin-dir` every time, add it to your shell config:
-
-```bash
-# Add to ~/.zshrc or ~/.bashrc
-alias claude-astra='claude --plugin-dir ~/astra'
-```
-
-Then use `claude-astra` instead of `claude` to start any session with Astra loaded.
 
 ### Coordinator mode (advanced)
 
 For complex features that benefit from parallel agent orchestration:
 
 ```bash
-claude --agent astra:coordinator --plugin-dir ~/astra
+claude --agent astra:coordinator
 ```
 
 The coordinator runs as the main thread and can spawn planner, implementer, reviewer, and debugger agents simultaneously. Use this for large features with independent phases — otherwise, the standard commands are sufficient.
 
 ### Verify installation
 
-After starting Claude Code with the plugin, run:
+After installing, run:
 
 ```
 /help

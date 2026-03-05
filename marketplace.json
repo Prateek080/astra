@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    {
+      "name": "astra",
+      "description": "Complete development lifecycle workflow — spec, plan, implement, review, ship, debug.",
+      "path": "."
+    }
+  ]
+}
