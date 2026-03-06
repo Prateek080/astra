@@ -71,35 +71,57 @@ Tell the user:
 
 ## Step 5: Generate global CLAUDE.md
 
-Create `~/.claude/CLAUDE.md` based on the user's interview answers. This file gets loaded into every Claude Code session across all projects. Structure it as:
+Create `~/.claude/CLAUDE.md` based on the user's interview answers. This file gets loaded into every Claude Code session across all projects.
+
+The following sections are mandatory — include them in every generated CLAUDE.md. Tailor the wording based on interview answers but keep the principles intact.
 
 ```markdown
 ## Workflow
-- [rules about planning, verification, context discipline]
+- Before implementing anything non-trivial, create a plan with phased tasks and test gates.
+- Each phase must have a verification step (test, lint, type-check, or screenshot).
+- Never skip verification. If tests don't exist, write them first.
+- If something goes sideways after 2 attempts, STOP. Don't keep pushing. Re-plan with what you've learned.
+- When context feels heavy or you've been correcting course, suggest a /clear.
 
-## Code Quality
+## Self-Improvement
+- When the user corrects you, immediately note what went wrong and the rule to prevent it.
+- Check if the same mistake exists elsewhere in the current session's work.
+- After completing a task, reflect: what patterns worked, what didn't, what to remember next time.
+
+## Quality
 - [rules based on their language/framework preferences]
 - [precision math rules if applicable]
+- For non-trivial changes, pause and ask: "Is there a simpler way?" If the fix feels hacky, rethink it.
+- Find root causes. No temporary fixes. No suppressing errors to make symptoms go away.
+- Minimal impact — changes should only touch what's necessary.
 
 ## Code Reuse
 - Search the codebase for existing patterns before writing new code.
+- Match the project's naming conventions, file structure, and error handling. Don't introduce new patterns unless asked.
 - Extract shared logic only after the same pattern appears 3+ times.
 
 ## Debt Prevention
 - No TODOs without a linked issue. No commented-out code.
+
+## Context Discipline
+- Delegate codebase research to subagents — don't pollute main context.
+- Scope exploration narrowly. Summarize what changed after completing a task.
 
 ## Git
 - [rules based on their git workflow preferences]
 
 ## Testing
 - [rules based on their testing approach]
+- Run the specific test for what changed after each meaningful change, not the full suite.
+- Never modify tests to make them pass — unless the test itself was wrong.
+- Never mark a task complete without proving it works.
 
 ## Communication
 - Lead with the action, not the reasoning.
 - After 2 failed attempts, stop and ask.
 ```
 
-Tailor the content to their actual answers. Don't include sections that don't apply. Keep it under 40 lines — this gets loaded into every session, so brevity matters.
+Tailor the bracketed sections to their actual answers. Remove brackets and replace with real rules. Keep it under 50 lines — this gets loaded into every session, so brevity matters.
 
 ## Step 6: Confirm
 

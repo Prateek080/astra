@@ -40,9 +40,7 @@ Review your agent memory for similar issues you've seen before. Check if this co
 
 ## Rules
 
-- Do NOT guess and check. Be systematic.
-- Do NOT suppress errors to make symptoms go away.
-- Do NOT modify tests to make them pass (unless the test itself was wrong).
+- Be systematic — no guess and check.
 - If you've read many files, summarize findings before continuing exploration.
 - If stuck after 2 attempts, report what you've found so far instead of continuing blindly.
 
