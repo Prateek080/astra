@@ -4,9 +4,19 @@ description: One-time global setup — configures settings, permissions, and cod
 
 # Global Setup
 
-You are configuring the user's global environment for optimal use with Astra. This only needs to run once per machine.
+You are configuring the user's global environment for optimal use with Astra. This command is idempotent — safe to run again to update preferences.
 
 > **Note:** This command configures `~/.claude/` paths (settings, CLAUDE.md). Both Claude Code and Cursor read from this directory for plugin compatibility.
+
+## Step 0: Detect re-run
+
+Read `~/.claude/settings.json` and `~/.claude/CLAUDE.md` if they exist.
+
+**If `~/.claude/CLAUDE.md` exists and contains `<!-- astra:managed -->`:**
+This is a re-run. Tell the user: "I found your existing global config. I'll interview you for any changes, generate an updated version, and show you the diff before writing anything."
+
+**If the files don't exist:**
+This is a fresh setup. Proceed normally.
 
 ## Step 1: Interview the user
 
@@ -19,7 +29,7 @@ Use AskUserQuestion to learn their preferences:
 5. **Financial or precision math?** — "Do any of your projects deal with money or precise decimal math?"
 6. **Anything else** — "Any other rules you always want Claude to follow across all projects?"
 
-Keep it conversational. Skip questions if the user has already answered them. Don't ask more than necessary.
+Keep it conversational. On re-runs, show the user their current answers from the existing file and ask what they want to change — don't re-ask everything. Don't ask more than necessary.
 
 ## Step 2: Configure settings.json
 
@@ -73,11 +83,23 @@ Tell the user:
 
 ## Step 5: Generate global CLAUDE.md
 
-Create `~/.claude/CLAUDE.md` based on the user's interview answers. This file gets loaded into every Claude Code session across all projects.
+Generate the full CLAUDE.md content based on interview answers.
+
+**Marker rule:** Always include `<!-- astra:managed -->` as the very first line. This marks the file as Astra-generated so future re-runs can detect it.
+
+**On re-run (marker exists):**
+1. Generate the new version based on updated interview answers.
+2. Show the user a **side-by-side summary** of what changed (sections added, removed, or modified).
+3. Ask: "Here's what I'd change. Apply these updates?" Only write the file after the user approves.
+4. If the user has added custom sections (anything not in the template below), preserve them exactly as-is at the end of the file.
+
+**On fresh run (no existing file):**
+Create the file directly.
 
 The following sections are mandatory — include them in every generated CLAUDE.md. Tailor the wording based on interview answers but keep the principles intact.
 
 ```markdown
+<!-- astra:managed -->
 ## Workflow
 - Before implementing anything non-trivial, create a plan with phased tasks and test gates.
 - Each phase must have a verification step (test, lint, type-check, or screenshot).
@@ -127,9 +149,9 @@ Tailor the bracketed sections to their actual answers. Remove brackets and repla
 
 ## Step 6: Confirm
 
-Show the user what was created/modified:
-1. `~/.claude/settings.json` — settings applied
-2. `~/.claude/CLAUDE.md` — coding standards saved
+Show the user what was done:
+1. `~/.claude/settings.json` — created / updated (specify which)
+2. `~/.claude/CLAUDE.md` — created / updated (specify which, summarize changes on re-run)
 3. Remind them to run `/permissions`, `/sandbox`, and `/statusline` manually (these are interactive commands that can't be automated)
 
 Tell the user: "Global setup complete. For each new project, run `/astra:init` to configure project-specific settings."

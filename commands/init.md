@@ -4,7 +4,7 @@ description: Set up the current project for Astra — generates CLAUDE.md and pa
 
 # Project Setup
 
-You are configuring the current project for optimal Astra usage. This runs once per project.
+You are configuring the current project for optimal Astra usage. This command is idempotent — safe to run again when the project evolves.
 
 ## Step 1: Explore the project
 
@@ -13,6 +13,8 @@ Before asking anything, silently explore:
 - Check directory structure — identify `backend/`, `frontend/`, `src/`, `app/`, `server/`, `api/`, `lib/`, `test/`, `tests/` directories.
 - Check for existing `CLAUDE.md`, `.claude/rules/`, `.cursorrules`, `.github/`, `tsconfig.json`, `eslint.config.*`, `.prettierrc`, `pytest.ini`, `vitest.config.*`, etc.
 - Identify test runner, linter, formatter, build tool from config files.
+
+**Detect re-run:** Check if `CLAUDE.md` exists and contains `<!-- astra:managed -->` on its first line. If yes, this is a re-run. Also check `.claude/rules/` for files containing `<!-- astra:managed -->`.
 
 ## Step 2: Interview the user
 
@@ -25,11 +27,23 @@ Use AskUserQuestion for things you can't detect from the codebase:
 
 Keep it to 2-4 questions. Skip anything you can answer from the codebase.
 
+**On re-run:** Instead of the full interview, ask: "Your project config exists. I can see [summary of what changed in the codebase since last run — new directories, changed deps, etc.]. Want me to update the config to reflect these changes, or do you have specific things to change?"
+
 ## Step 3: Generate project CLAUDE.md
 
-Create `CLAUDE.md` in the project root (or update if one exists). Structure:
+**Marker rule:** Always include `<!-- astra:managed -->` as the very first line. This marks the file as Astra-generated so future re-runs can detect it.
+
+**On re-run (marker exists):**
+1. Generate the new version based on current codebase + interview updates.
+2. Show the user a **summary of what changed** (new sections, updated commands, removed directories, etc.).
+3. Ask: "Here's what I'd update. Apply these changes?" Only write the file after the user approves.
+4. If the user has added custom content below the Astra-managed sections, preserve it exactly as-is.
+
+**On fresh run (no existing file):**
+Create the file directly. Structure:
 
 ```markdown
+<!-- astra:managed -->
 # [Project Name]
 
 ## Stack
@@ -52,9 +66,19 @@ Tailor to the project. Remove sections that don't apply. Keep it under 40 lines 
 
 ## Step 4: Generate path-specific rules
 
-Create `.claude/rules/` directory and add rule files based on the project structure you detected:
+**Marker rule:** Every Astra-generated rule file must include `<!-- astra:managed -->` as the very first line (before the `---` frontmatter). This distinguishes Astra files from user-created ones.
+
+**On re-run:**
+1. Read all files in `.claude/rules/`.
+2. Files **with** `<!-- astra:managed -->` — regenerate based on current codebase. Show the user what changed and ask for approval before overwriting.
+3. Files **without** `<!-- astra:managed -->` — these are user-created. Never touch them.
+4. If new directories exist that aren't covered by any rule file, propose new rule files.
+
+**On fresh run:**
+Create `.claude/rules/` and add rule files based on the project structure.
 
 **Only create rules for directories that actually exist.** Each rule file should:
+- Start with `<!-- astra:managed -->` on the first line
 - Have a `paths:` frontmatter matching the relevant directories
 - Contain 3-5 conventions specific to that area of the codebase
 - Reference existing patterns (e.g., "follow the pattern in src/api/users.ts for new API routes")
@@ -63,6 +87,7 @@ Example for a full-stack project:
 
 `.claude/rules/backend.md`:
 ```markdown
+<!-- astra:managed -->
 ---
 paths: ["backend/**"]
 ---
@@ -73,6 +98,7 @@ paths: ["backend/**"]
 
 `.claude/rules/frontend.md`:
 ```markdown
+<!-- astra:managed -->
 ---
 paths: ["frontend/**"]
 ---
@@ -87,8 +113,9 @@ Adapt the rules to what the project actually uses. Don't create generic rules �
 
 ## Step 5: Confirm
 
-Show the user what was created:
-1. `CLAUDE.md` — project context (show contents)
+Show the user what was done:
+- For each file, say **created** (new) or **updated** (changed) or **unchanged** (no diff).
+1. `CLAUDE.md` — project context (show contents; on re-run, summarize what changed)
 2. `.claude/rules/*.md` — path-specific rules (list them with a one-line summary each)
 
 Tell the user: "Project setup complete. You're ready to start building. Use `/astra:spec` for new features or `/astra:plan` if you already know what to build."
