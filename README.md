@@ -99,6 +99,8 @@ Rules reference real files from *your* codebase, not generic advice. Only create
 | `.cursor/rules/*.mdc` | `/astra:init` | **Yes** — Cursor conventions |
 | `SPEC.md` | `/astra:spec` | Optional — useful as documentation |
 | `PLAN.md` | `/astra:plan` | Optional — useful for tracking |
+| `docs/specs/*.md` | `/astra:spec` (auto-archived) | Optional — previous feature specs |
+| `docs/plans/*.md` | `/astra:spec` (auto-archived) | Optional — previous feature plans |
 | `docs/solutions/*.md` | `/astra:compound` | Optional — project knowledge base |
 | `docs/.agent-memory/*.md` | Agents (auto) | **No** — personal learnings, add to `.gitignore` |
 

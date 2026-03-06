@@ -13,11 +13,11 @@ You are conducting a product discovery interview. Your goal is to deeply underst
 
 1. **Check for existing spec.** Read the project's CLAUDE.md and README for context. Then check if SPEC.md already exists in the project root.
 
-   **If SPEC.md exists (update mode):**
+   **If SPEC.md exists:**
    - Read it and present a summary: "Your existing spec covers [feature name] with [N] requirements. Sections: [list sections]."
    - Ask: "Do you want to update this spec or start fresh for a different feature?"
    - If updating: ask what changed — new requirements, scope changes, resolved open questions. Only re-interview for the parts that need updating. Preserve sections the user doesn't mention.
-   - If starting fresh: proceed with the full interview below.
+   - If starting fresh: **archive first.** Extract the feature name from the existing SPEC.md heading (e.g., `# Feature: User Auth` → `user-auth`). Move `SPEC.md` to `docs/specs/<feature-name>.md`. If `PLAN.md` also exists, move it to `docs/plans/<feature-name>.md`. Create the directories if they don't exist. Then proceed with the full interview below.
 
    **If no SPEC.md exists:** Proceed with the full interview.
 
