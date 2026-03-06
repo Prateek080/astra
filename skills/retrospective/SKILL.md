@@ -1,6 +1,7 @@
 ---
 name: retrospective
 description: Assess how the last feature went and suggest workflow improvements
+user-invocable: true
 disable-model-invocation: true
 context: fork
 agent: general-purpose

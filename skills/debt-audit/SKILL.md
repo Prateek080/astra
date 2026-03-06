@@ -1,6 +1,7 @@
 ---
 name: debt-audit
 description: Audit codebase for technical debt — dead code, TODOs, deprecated patterns, missing tests, hardcoded values
+user-invocable: true
 disable-model-invocation: true
 context: fork
 agent: general-purpose

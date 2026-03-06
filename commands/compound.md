@@ -54,3 +54,12 @@ After solving a non-trivial problem (bug fix, architectural decision, tricky int
 - Slugs should be kebab-case, max 50 characters.
 - Don't document trivial fixes (typos, missing imports). Only document problems where the solution wasn't obvious.
 - If a similar solution already exists in `docs/solutions/`, update it instead of creating a duplicate.
+
+## Browsing Existing Solutions
+
+If the user asks to search or browse the knowledge base (e.g., "have we solved this before?", "show me past solutions"):
+1. List categories: `ls docs/solutions/`
+2. Search by keyword across solution files.
+3. Present matching solutions with their title, category, and a one-line summary.
+
+Agents (planner, debugger, implementer) automatically check `docs/solutions/` before starting work.

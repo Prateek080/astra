@@ -9,7 +9,7 @@ Astra works on Cursor with the same commands, agents, and skills as Claude Code.
 ### Prerequisites
 
 - [Cursor](https://cursor.com) installed
-- `git`, `python3` (ships with macOS)
+- `git`, `python3`
 - `node` / `npx` (for MCP servers)
 
 ### Steps
@@ -17,7 +17,11 @@ Astra works on Cursor with the same commands, agents, and skills as Claude Code.
 1. **Clone the repo** (skip if already done):
 
    ```bash
+   # SSH
    git clone git@github.com:Prateek080/astra.git ~/astra
+
+   # HTTPS
+   git clone https://github.com/Prateek080/astra.git ~/astra
    ```
 
    > Clone path can be anywhere — the install script auto-detects the repo location.
@@ -71,12 +75,9 @@ Provide arguments after the command name — the AI receives them as part of the
 
 ### Agents
 
-Agents (planner, implementer, reviewer, debugger) are available as subagents. The AI delegates to them via the Task tool when commands request it. You can also invoke them directly:
+Agents (planner, implementer, reviewer, debugger) are available as subagents. The AI delegates to them automatically when you use `/astra:*` commands (e.g., `/astra:plan` delegates to the planner, `/astra:review` delegates to the reviewer). You don't need to invoke agents directly for normal usage.
 
-- `/planner` — explore a codebase and create a plan
-- `/implementer` — implement code, run tests
-- `/reviewer` — run a code review
-- `/debugger` — root cause analysis and fix
+If you want to invoke an agent outside the standard workflow, refer to it by name in chat (e.g., "use the reviewer agent to review this file").
 
 ### Skills
 
@@ -112,6 +113,8 @@ Claude Code agents have built-in memory that persists learnings across sessions.
 
 - **[SuperLocalMemory](https://superlocalmemory.com)** — local SQLite-based memory, works across Cursor, Claude Code, and other MCP-compatible tools. Install with `npx superlocalmemory@latest init`.
 - **[cursor-mem](https://pypi.org/project/cursor-mem/)** — lightweight Python-based alternative, no API key needed. Install with `pip install cursor-mem`.
+
+*(Recommendations as of March 2026. Verify these tools are actively maintained before installing.)*
 
 Either option gives agents persistent memory so learnings carry across sessions.
 
@@ -153,7 +156,7 @@ In dev mode, edits to the repo are reflected in the plugin immediately — just 
 
 **Plugin loads but agents aren't available:**
 - Verify: `ls ~/.cursor/plugins/astra/agents/`
-- Agents are invoked via `/agent-name` or by natural language ("use the planner agent").
+- Agents are auto-delegated by `/astra:*` commands. You can also refer to them by name in chat (e.g., "use the reviewer agent").
 
 **MCP servers not connecting:**
 - Verify `node` and `npx` are installed: `which npx`

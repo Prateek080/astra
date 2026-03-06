@@ -15,7 +15,7 @@ You are preparing changes for commit and pull request. Follow the pre-flight che
 2. **Check the branch**: Run `git branch --show-current`. If on the repository's default branch (main/master/develop), warn the user: "You're on [branch]. Shipping will push directly to the default branch. Do you want to create a feature branch first?" Only proceed after the user confirms. If the user wants a branch, create one with a descriptive name based on the changes and switch to it.
 3. **Run tests**: Execute the project's test suite. If any tests fail, stop and fix them first.
 4. **Run linter/formatter**: If the project has a linter or formatter configured, run it.
-5. **Check for secrets**: Scan staged files for anything that looks like credentials, API keys, or .env files. Warn if found.
+5. **Check for secrets**: Scan the diff for anything that looks like credentials, API keys, or .env files. Warn if found.
 6. **Check for debug artifacts**: Look for console.log, print(), debugger statements, or commented-out code in the diff.
 7. **Review the diff**: Run `git diff --staged` (or `git diff` if nothing is staged). Summarize what changed and why.
 
@@ -34,6 +34,16 @@ You are preparing changes for commit and pull request. Follow the pre-flight che
     - Title: short, under 70 chars
     - Body: summary bullets, test plan checklist, any migration notes
 12. Return the PR URL to the user. If the changes involved a non-trivial bug fix or architectural decision, suggest: "Consider running `/astra:compound` to document this solution for future reference."
+
+## Scope
+
+By default, ship runs the full flow: pre-flight checks → commit → push → PR.
+
+If the user requests a partial flow (e.g., "just commit", "commit and push", "no PR"):
+- **Commit only** — Run pre-flight checks (steps 1-7), commit (steps 8-9). Do not push or create a PR.
+- **Skip PR** — Run through push (step 10). Skip PR creation (steps 11-12).
+
+Respect the user's intent. If unclear, run the full flow.
 
 ## Base Branch
 

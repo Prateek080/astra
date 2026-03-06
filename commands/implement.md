@@ -16,6 +16,7 @@ You are executing an implementation plan phase by phase. Each phase must pass it
    - If $ARGUMENTS is a file path, read that file as the plan instead.
    - If $ARGUMENTS is a phase reference (e.g., "phase 3", "3", "Phase 3: Auth"), read PLAN.md and execute **only that phase** — skip straight to it, run its tasks and verification gate, then stop. Do not execute other phases.
    - If no plan exists, tell the user to run `/astra:plan` first.
+   - Scan for phases already marked `**Status: complete**`. Skip them and tell the user which phases were already completed.
 
 2. **Scan for parallel phases** (skip this step if running a single phase): After reading the plan, identify all phases marked `Parallel: yes`. Group them into batches — consecutive parallel phases form one batch. Sequential phases (`Parallel: no` or unmarked) run alone.
 
@@ -28,15 +29,17 @@ You are executing an implementation plan phase by phase. Each phase must pass it
    d. Run the verification gate (tests, lint, type-check) defined in the plan.
    e. If verification fails, fix issues before moving on. Do not skip failing tests.
    f. Summarize what was done: files created, files modified, tests added.
+   g. Update PLAN.md — check off this phase's test gate items (`- [x]`) and append `**Status: complete**` to the phase heading (e.g., `## Phase 2: Auth — **Status: complete**`).
 
    **For a parallel batch:**
    a. Announce which phases are running in parallel.
    b. Verify the parallel phases have no overlapping files (check "files to create" and "files to modify" across phases). If they share files, run them sequentially instead and warn the user.
    c. Spawn one implementer subagent per phase. Both editors support worktree-based parallel execution — each subagent gets its own copy of the repo. In Claude Code, use `isolation: worktree`. In Cursor, subagents automatically run in worktrees when launched in parallel.
    d. Wait for all subagents to complete.
-   e. Merge each worktree's changes back to the main branch. In Cursor, use the "Apply" button for each worktree. In Claude Code, worktree merges happen automatically. Resolve any conflicts before proceeding.
+   e. Merge each worktree's changes back to the main branch via `git merge`. Resolve any conflicts before proceeding.
    f. Run verification gates for all phases in the batch. If any fail, fix before proceeding.
    g. Summarize what each parallel phase accomplished.
+   h. Update PLAN.md — mark all phases in this batch as complete (same format as sequential phases).
 
 4. **Between phase groups**: Suggest the user run `/clear` (Claude Code) or start a new chat (Cursor) to keep context clean before the next group.
 

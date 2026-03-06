@@ -38,7 +38,7 @@ If the review-checklist skill is not already loaded in your context, read it fro
 
 ## After Completion
 
-Save what you learned to your agent memory. If agent memory is unavailable, append learnings to `docs/.agent-memory/reviewer.md` (create the file and directory if they don't exist):
+Save what you learned to your agent memory. If agent memory is unavailable (no `memory: user`), include learnings at the end of your response so the calling session can persist them:
 - Recurring issues in this codebase
 - Patterns that commonly cause bugs
 - Code quality trends (improving/degrading)

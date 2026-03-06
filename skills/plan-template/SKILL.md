@@ -41,6 +41,8 @@ One sentence: what does "done" look like? Include measurable criteria.
 
 **Parallel**: yes/no (can this run independently of other phases?)
 
+> Phases are marked `**Status: complete**` by `/astra:implement` as they pass their test gates. This enables resuming across sessions.
+
 ## Phase 2: [Name]
 (same structure)
 

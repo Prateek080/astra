@@ -22,12 +22,9 @@ This is a fresh setup. Proceed normally.
 
 Ask the user (use AskUserQuestion if available, otherwise ask directly in chat) to learn their preferences:
 
-1. **Primary languages/frameworks** — "What languages and frameworks do you mainly work with?" (e.g., TypeScript + React, Python + FastAPI, Rust, Go)
-2. **Code style preferences** — "Any strong conventions? Tabs vs spaces, semicolons, naming conventions, etc."
-3. **Git workflow** — "Do you use conventional commits? Do you prefer squash merges? Any commit message format?"
-4. **Testing approach** — "What test runners do you use? Any coverage requirements?"
-5. **Financial or precision math?** — "Do any of your projects deal with money or precise decimal math?"
-6. **Anything else** — "Any other rules you always want Claude to follow across all projects?"
+1. **Anything else** — "Any other rules you always want Claude to follow across all projects?"
+
+> **Note:** Don't ask about languages, frameworks, test runners, code style, or git workflow here. Stack-specific conventions are handled by `/astra:init`. Git best practices are baked into the template.
 
 Keep it conversational. On re-runs, show the user their current answers from the existing file and ask what they want to change — don't re-ask everything. Don't ask more than necessary.
 
@@ -52,30 +49,16 @@ Explain to the user:
 
 > **Claude Code only**: The following step uses `/permissions`, which is a Claude Code interactive command. In Cursor, tool permissions are managed through Cursor's Settings UI — skip this step.
 
-Tell the user to run `/permissions` and suggest these allowlists based on their tech stack:
+Tell the user to run `/permissions` and suggest these universal allowlists:
 
-**Always:**
 ```
 Read, Glob, Grep, Edit
 Bash(git *)
 ```
 
-**If JavaScript/TypeScript:**
-```
-Bash(npm *), Bash(npx *), Bash(bun *), Bash(node *)
-```
+Tell the user they can add stack-specific permissions per project (e.g., `Bash(npm *)`, `Bash(python *)`, `Bash(cargo *)`) — those are best configured in each project's `.claude/settings.local.json` or via `/permissions` when working in that project.
 
-**If Python:**
-```
-Bash(python *), Bash(pip *), Bash(uv *), Bash(pytest *)
-```
-
-**If Rust:**
-```
-Bash(cargo *)
-```
-
-Explain: pre-approving these means Claude won't pause for confirmation on routine operations like running tests or checking git status.
+Explain: pre-approving these means Claude won't pause for confirmation on routine operations like checking git status.
 
 ## Step 4: Enable safety features
 
@@ -100,7 +83,7 @@ Generate the full CLAUDE.md content based on interview answers.
 **On fresh run (no existing file):**
 Create the file directly.
 
-The following sections are mandatory — include them in every generated CLAUDE.md. Tailor the wording based on interview answers but keep the principles intact.
+The following sections are mandatory — include them in every generated CLAUDE.md. These are stack-agnostic principles that apply to all projects. Use them exactly as written — no customization needed.
 
 ```markdown
 <!-- astra:managed -->
@@ -117,8 +100,6 @@ The following sections are mandatory — include them in every generated CLAUDE.
 - After completing a task, reflect: what patterns worked, what didn't, what to remember next time.
 
 ## Quality
-<!-- CUSTOMIZE: Add 2-3 rules for the user's language/framework. Example: "Use strict TypeScript — no `any` types without justification." Delete this comment in the output. -->
-- If the user works with money or precision math, add: "Use Decimal/BigDecimal for financial calculations. Never use floating point for money."
 - For non-trivial changes, pause and ask: "Is there a simpler way?" If the fix feels hacky, rethink it.
 - Find root causes. No temporary fixes. No suppressing errors to make symptoms go away.
 - Minimal impact — changes should only touch what's necessary.
@@ -136,10 +117,10 @@ The following sections are mandatory — include them in every generated CLAUDE.
 - Scope exploration narrowly. Summarize what changed after completing a task.
 
 ## Git
-<!-- CUSTOMIZE: Add 2-3 rules for the user's git workflow. Example: "Use conventional commits (feat:, fix:, chore:)." Delete this comment in the output. -->
+- Use conventional commits (feat:, fix:, chore:, refactor:, docs:, test:).
+- Keep commits atomic — one logical change per commit.
 
 ## Testing
-<!-- CUSTOMIZE: Add 1-2 rules for the user's test approach. Example: "Run pytest for backend, vitest for frontend." Delete this comment in the output. -->
 - Run the specific test for what changed after each meaningful change, not the full suite.
 - Never modify tests to make them pass — unless the test itself was wrong.
 - Never mark a task complete without proving it works.
@@ -149,7 +130,7 @@ The following sections are mandatory — include them in every generated CLAUDE.
 - After 2 failed attempts, stop and ask.
 ```
 
-Replace the `<!-- CUSTOMIZE -->` comments with actual rules based on the user's interview answers. Remove the comments from the output — they are instructions for you, not content for the file. Keep the final file under 50 lines — this gets loaded into every session, so brevity matters.
+Do not add any language-specific or stack-specific rules — those belong in the project-level CLAUDE.md generated by `/astra:init`. Keep the final file under 50 lines — this gets loaded into every session, so brevity matters.
 
 ## Step 6: Confirm
 

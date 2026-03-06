@@ -21,11 +21,9 @@ Before asking anything, silently explore:
 Ask the user (use AskUserQuestion if available, otherwise ask directly in chat) for things you can't detect from the codebase:
 
 1. "I detected [stack summary]. Is that correct, or is there anything I'm missing?"
-2. "Any project-specific conventions not captured in config files?" (e.g., naming patterns, folder organization rules, API response format)
-3. "What's the test command?" (if not detectable from package.json scripts or similar)
-4. "Any areas of the codebase I should treat differently?" (e.g., legacy code that follows old patterns, auto-generated files to never touch)
+2. "Any areas of the codebase I should treat differently?" (e.g., legacy code that follows old patterns, auto-generated files to never touch, deprecated patterns being migrated)
 
-Keep it to 2-4 questions. Skip anything you can answer from the codebase.
+Keep it to these 2 questions. Skip anything you can answer from the codebase.
 
 **On re-run:** Instead of the full interview, ask: "Your project config exists. I can see [summary of what changed in the codebase since last run — new directories, changed deps, etc.]. Want me to update the config to reflect these changes, or do you have specific things to change?"
 
@@ -66,7 +64,7 @@ Tailor to the project. Remove sections that don't apply. Keep it under 40 lines 
 
 ## Step 4: Generate path-specific rules
 
-**Marker rule:** Every Astra-generated rule file must include `<!-- astra:managed -->` as the very first line (before the `---` frontmatter). This distinguishes Astra files from user-created ones.
+**Marker rule:** Every Astra-generated rule file must include `<!-- astra:managed -->` as the first line of the body (immediately after the closing `---` of the frontmatter). This ensures frontmatter parsing works correctly while still marking the file as Astra-generated.
 
 **On re-run:**
 1. Read all files in `.claude/rules/`.
@@ -78,8 +76,8 @@ Tailor to the project. Remove sections that don't apply. Keep it under 40 lines 
 Create `.claude/rules/` and add rule files based on the project structure.
 
 **Only create rules for directories that actually exist.** Each rule file should:
-- Start with `<!-- astra:managed -->` on the first line
 - Have a `paths:` frontmatter matching the relevant directories
+- Include `<!-- astra:managed -->` as the first line of the body (after the closing `---`)
 - Contain 3-5 conventions specific to that area of the codebase
 - Reference existing patterns (e.g., "follow the pattern in src/api/users.ts for new API routes")
 
@@ -87,10 +85,10 @@ Example for a full-stack project:
 
 `.claude/rules/backend.md`:
 ```markdown
-<!-- astra:managed -->
 ---
 paths: ["backend/**"]
 ---
+<!-- astra:managed -->
 - Follow existing route patterns in backend/app/api/ for new endpoints.
 - Use the project's ORM models from backend/app/models/ — never write raw SQL.
 - All new endpoints need tests in backend/tests/.
@@ -98,10 +96,10 @@ paths: ["backend/**"]
 
 `.claude/rules/frontend.md`:
 ```markdown
-<!-- astra:managed -->
 ---
 paths: ["frontend/**"]
 ---
+<!-- astra:managed -->
 - Use components from frontend/src/components/ui/ before creating new ones.
 - Follow the data fetching pattern in existing page components.
 - All new pages need to be responsive (mobile-first).
@@ -115,7 +113,7 @@ Adapt the rules to what the project actually uses. Don't create generic rules �
 
 | | Claude Code (`.claude/rules/backend.md`) | Cursor (`.cursor/rules/backend.mdc`) |
 |---|---|---|
-| Marker | `<!-- astra:managed -->` (first line) | `<!-- astra:managed -->` (first line) |
+| Marker | `<!-- astra:managed -->` (first line of body, after frontmatter) | `<!-- astra:managed -->` (first line of body, after frontmatter) |
 | Frontmatter | `paths: ["backend/**"]` | `description: Backend conventions` + `globs: backend/**` + `alwaysApply: false` |
 | Body | Same conventions | Same conventions |
 

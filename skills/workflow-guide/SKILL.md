@@ -1,6 +1,7 @@
 ---
 name: workflow-guide
 description: How to use the astra workflow for new projects, new features, and optimizations. Invoke when unsure which commands to use.
+user-invocable: true
 disable-model-invocation: false
 ---
 
@@ -97,6 +98,22 @@ Start a fresh session between spec and plan for clean context (Claude Code: `/cl
 
 5. **Review with extra scrutiny** — `/astra:review`
    - Focus on: reusability, debt prevention, performance, no regressions.
+
+---
+
+## When Plans Change
+
+Real development isn't linear. Here's how to handle common disruptions:
+
+| Situation | What to do |
+|---|---|
+| Spec changed after planning | Update SPEC.md, then re-run `/astra:plan` — it reads the updated spec |
+| Review found architectural issues | Small: fix in place. Fundamental: re-plan the affected phases |
+| Later phase reveals earlier phase was wrong | Fix the earlier phase, update PLAN.md, then continue |
+| Scope creep during implementation | Stop. Update SPEC.md with the new scope, re-plan remaining phases |
+| Stuck after 2 attempts on a phase | Run `/astra:debug` or re-plan that phase with a different approach |
+
+The key principle: **update the artifact** (SPEC.md or PLAN.md), **then re-run the corresponding command**. Don't try to hold changes in your head across sessions.
 
 ---
 
