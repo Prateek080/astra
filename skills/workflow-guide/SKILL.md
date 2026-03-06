@@ -107,7 +107,10 @@ Use `/astra:*` commands normally. Claude delegates to subagents as needed.
 Best for most work — simple, low overhead.
 
 ### Coordinator Mode (power mode)
-Run `claude --agent astra:coordinator` for complex multi-phase features.
+For complex multi-phase features, run the coordinator agent directly:
+- **Claude Code:** `claude --agent astra:coordinator`
+- **Cursor:** Select `astra:coordinator` from the agent picker
+
 The coordinator can spawn planner, implementer, reviewer, and debugger agents in parallel.
 Use for large features that benefit from orchestrated parallel execution.
 

@@ -56,8 +56,6 @@ claude --plugin-dir ~/astra
 
 ### Cursor
 
-Install Astra from the [Cursor Marketplace](https://cursor.com/marketplace), or load it manually:
-
 ```bash
 cursor --plugin-dir ~/astra
 ```
@@ -82,7 +80,9 @@ Interviews you about your stack, conventions, and preferences, then configures y
 |---|---|
 | `~/.claude/settings.json` | Sets effort to high (deeper thinking) + auto-compact at 80% (prevents context from running out) |
 | `~/.claude/CLAUDE.md` | Your personal coding standards — loaded into every session across all projects |
-| `/permissions`, `/sandbox`, `/statusline` | Walks you through these interactive commands step by step |
+| `/permissions`, `/sandbox`, `/statusline` | Walks you through these interactive commands step by step *(Claude Code only)* |
+
+> Both Claude Code and Cursor read from `~/.claude/` for plugin configuration.
 
 ### `/astra:init` — Set up your project *(run once per codebase)*
 
@@ -108,6 +108,7 @@ Rules reference real files from *your* codebase, not generic advice. Only create
 | `.claude/rules/*.md` | `/astra:init` | **Yes** — team shares conventions |
 | `SPEC.md` | `/astra:spec` | Optional — useful as documentation |
 | `PLAN.md` | `/astra:plan` | Optional — useful for tracking |
+| `docs/solutions/*.md` | `/astra:compound` | Optional — project knowledge base |
 
 **You're ready to build.**
 
@@ -255,15 +256,15 @@ Delegates to a debugger subagent. Forms hypotheses, tests them systematically (n
 
 ## Context Management
 
-> **Why this matters:** Claude Code has a finite context window. As the conversation grows, older instructions get compressed or lost. When context fills up, Claude forgets your conventions, misses details, and quality drops. **Managing context is the single most important habit for getting good results.**
+> **Why this matters:** AI coding assistants have a finite context window. As the conversation grows, older instructions get compressed or lost. When context fills up, the assistant forgets your conventions, misses details, and quality drops. **Managing context is the single most important habit for getting good results.**
 
 | Situation | Action | Why |
 |---|---|---|
 | Finished a task, starting something new | `/clear` | Old file reads and discussion are irrelevant. Fresh context = better results. |
 | Between implementation phases | `/clear` | Phase 3 doesn't need phase 1's file contents. |
-| Claude keeps making the same mistake | `/clear` + rephrase | Wrong attempts pollute context. Fresh start with clearer instructions works better. |
+| Same mistake keeps repeating | `/clear` + rephrase | Wrong attempts pollute context. Fresh start with clearer instructions works better. |
 | Long session, can't clear yet | `/compact` | Compresses old messages. Do this around 50% usage. |
-| Want to monitor usage | `/statusline` | Shows context % in your terminal. Set up once during `/astra:setup`. |
+| Want to monitor usage *(Claude Code)* | `/statusline` | Shows context % in your terminal. Set up once during `/astra:setup`. |
 
 **Built-in protections:**
 - Astra commands delegate heavy exploration to **subagents** — their file reads happen in a separate context, not yours.
@@ -287,7 +288,7 @@ Commands delegate to specialized agents, each running in its own context window.
 
 Learning agents accumulate knowledge across all your projects — the reviewer remembers recurring issues, the debugger remembers common root causes. Persists between sessions.
 
-> **Coordinator mode:** For large features with independent phases, run `claude --agent astra:coordinator` to orchestrate multiple agents in parallel.
+> **Coordinator mode:** For large features with independent phases, run the coordinator directly — `claude --agent astra:coordinator` *(Claude Code)* or select `astra:coordinator` from the agent picker *(Cursor)*.
 
 ### MCP Servers *(auto-loaded)*
 

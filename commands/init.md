@@ -4,7 +4,7 @@ description: Set up the current project for Astra — generates CLAUDE.md and pa
 
 # Project Setup
 
-You are configuring the current project for optimal Claude Code + Astra usage. This runs once per project.
+You are configuring the current project for optimal Astra usage. This runs once per project.
 
 ## Step 1: Explore the project
 

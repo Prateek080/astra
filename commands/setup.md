@@ -1,10 +1,12 @@
 ---
-description: One-time global Claude Code setup — configures settings, permissions, and coding standards for optimal Astra usage
+description: One-time global setup — configures settings, permissions, and coding standards for optimal Astra usage
 ---
 
 # Global Setup
 
-You are configuring the user's global Claude Code environment for optimal use with Astra. This only needs to run once per machine.
+You are configuring the user's global environment for optimal use with Astra. This only needs to run once per machine.
+
+> **Note:** This command configures `~/.claude/` paths (settings, CLAUDE.md). Both Claude Code and Cursor read from this directory for plugin compatibility.
 
 ## Step 1: Interview the user
 
