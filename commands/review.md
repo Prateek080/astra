@@ -3,9 +3,11 @@ description: Run a comprehensive code review on recent changes
 argument-hint: "[file path or git ref]"
 ---
 
+> **Arguments**: Any text the user provides after the command name serves as input. In Claude Code, this is substituted into $ARGUMENTS automatically.
+
 # Review Phase
 
-Prefer delegating this review to the reviewer subagent to keep main context clean. If the Agent tool is unavailable, review directly but focus on the diff only — don't read entire files unless necessary.
+Prefer delegating this review to the reviewer subagent to keep main context clean. If subagent delegation is not available, review directly but focus on the diff only — don't read entire files unless necessary.
 
 ## Process
 

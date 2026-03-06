@@ -23,9 +23,9 @@ Just ask Claude directly. Optionally run `/astra:review` after to catch anything
 
 ### Large (new feature, unclear scope, multiple modules, needs discovery)
 ```
-/astra:spec → /clear → /astra:plan → /astra:implement → /astra:review → /astra:ship
+/astra:spec → fresh session → /astra:plan → /astra:implement → /astra:review → /astra:ship
 ```
-Start a fresh session (`/clear`) between spec and plan for clean context.
+Start a fresh session between spec and plan for clean context (Claude Code: `/clear`, Cursor: new chat).
 
 ### Optimization / Refactor (improving existing code)
 ```
@@ -38,18 +38,18 @@ Start a fresh session (`/clear`) between spec and plan for clean context.
 
 1. **Initialize the project** — Set up repo, install dependencies, configure tooling.
 
-2. **Set up Claude Code for the project:**
-   - Run `/astra:init` to generate CLAUDE.md and `.claude/rules/` for the project.
-   - Install relevant LSP plugin: run `/plugin` and search for your language.
+2. **Set up for the project:**
+   - Run `/astra:init` to generate CLAUDE.md and project rules (`.claude/rules/` and `.cursor/rules/`).
+   - Claude Code: install relevant LSP plugin via `/plugin`.
 
 3. **Spec the MVP** — `/astra:spec` to interview and produce SPEC.md.
    - Focus on MVP scope. Don't spec everything — spec the first milestone.
 
-4. **Plan the MVP** — `/clear` then `/astra:plan` to create phased milestones.
+4. **Plan the MVP** — Start a fresh session, then `/astra:plan` to create phased milestones.
    - Each phase should be independently deployable.
 
 5. **Build phase by phase** — `/astra:implement` for each phase.
-   - `/clear` between phases for clean context.
+   - Start fresh between phases for clean context.
    - `/astra:review` after each phase, not just at the end.
 
 6. **Ship incrementally** — `/astra:ship` per phase. Small PRs, not one giant PR.
@@ -100,27 +100,18 @@ Start a fresh session (`/clear`) between spec and plan for clean context.
 
 ---
 
-## Two Modes of Operation
+## How It Works
 
-### Command Mode (default)
-Use `/astra:*` commands normally. Claude delegates to subagents as needed.
-Best for most work — simple, low overhead.
-
-### Coordinator Mode (power mode)
-For complex multi-phase features, run the coordinator agent directly:
-- **Claude Code:** `claude --agent astra:coordinator`
-- **Cursor:** Select `astra:coordinator` from the agent picker
-
-The coordinator can spawn planner, implementer, reviewer, and debugger agents in parallel.
-Use for large features that benefit from orchestrated parallel execution.
+Use `/astra:*` commands normally. The AI delegates to subagents as needed.
+When your plan has phases marked `Parallel: yes`, the implement command automatically spawns parallel subagents to execute them concurrently.
 
 ---
 
 ## Context Management Tips
 
-- **`/clear` between unrelated tasks** — the #1 habit for maintaining quality.
-- **`/clear` between phases** — don't let implementation phase N pollute phase N+1.
+- **Start fresh between unrelated tasks** — the #1 habit for maintaining quality. In Claude Code: `/clear`. In Cursor: start a new chat.
+- **Start fresh between phases** — don't let implementation phase N pollute phase N+1.
 - **Use subagents for research** — keeps main context clean.
-- **If you've corrected Claude twice on the same issue**, `/clear` and rephrase.
-- **Set up a status line** — run `/statusline` to monitor context usage and cost.
-- **Manual `/compact`** at ~50% context if you need to continue without clearing.
+- **If you've corrected the AI twice on the same issue**, start fresh and rephrase.
+- **Claude Code:** run `/statusline` to monitor context usage. Run `/compact` at ~50% context if you need to continue without clearing.
+- **Cursor:** context usage is visible in the UI. Start a new chat when context feels heavy.

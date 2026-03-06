@@ -3,27 +3,42 @@ description: Execute a plan phase-by-phase with verification gates
 argument-hint: "[path to PLAN.md or phase number]"
 ---
 
+> **Arguments**: Any text the user provides after the command name serves as input. In Claude Code, this is substituted into $ARGUMENTS automatically.
+
 # Implement Phase
 
 You are executing an implementation plan phase by phase. Each phase must pass its verification gate before moving to the next.
 
 ## Process
 
-1. **Read the plan**: Look for PLAN.md in the project root, or read the file at $ARGUMENTS. If no plan exists, tell the user to run `/astra:plan` first.
+1. **Read the plan and determine scope**:
+   - Look for PLAN.md in the project root.
+   - If $ARGUMENTS is a file path, read that file as the plan instead.
+   - If $ARGUMENTS is a phase reference (e.g., "phase 3", "3", "Phase 3: Auth"), read PLAN.md and execute **only that phase** — skip straight to it, run its tasks and verification gate, then stop. Do not execute other phases.
+   - If no plan exists, tell the user to run `/astra:plan` first.
 
-2. **Execute one phase at a time**:
+2. **Scan for parallel phases** (skip this step if running a single phase): After reading the plan, identify all phases marked `Parallel: yes`. Group them into batches — consecutive parallel phases form one batch. Sequential phases (`Parallel: no` or unmarked) run alone.
+
+3. **Execute phase groups in order**:
+
+   **For a sequential phase:**
    a. Announce which phase you're starting and what it involves.
    b. Before writing new code, search the codebase for existing similar patterns or utilities. Reuse what exists.
    c. Implement the tasks for this phase.
    d. Run the verification gate (tests, lint, type-check) defined in the plan.
    e. If verification fails, fix issues before moving on. Do not skip failing tests.
+   f. Summarize what was done: files created, files modified, tests added.
 
-3. **After each phase completes**:
-   a. Summarize what was done: files created, files modified, tests added.
-   b. Suggest the user run `/clear` before starting the next phase to keep context clean.
-   c. If the next phase is independent, mention it can be run in parallel using a subagent with worktree isolation.
+   **For a parallel batch:**
+   a. Announce which phases are running in parallel.
+   b. Verify the parallel phases have no overlapping files (check "files to create" and "files to modify" across phases). If they share files, run them sequentially instead and warn the user.
+   c. Spawn one implementer subagent per phase. Both editors support worktree-based parallel execution — each subagent gets its own copy of the repo. In Claude Code, use `isolation: worktree`. In Cursor, subagents automatically run in worktrees when launched in parallel.
+   d. Wait for all subagents to complete.
+   e. Merge each worktree's changes back to the main branch. In Cursor, use the "Apply" button for each worktree. In Claude Code, worktree merges happen automatically. Resolve any conflicts before proceeding.
+   f. Run verification gates for all phases in the batch. If any fail, fix before proceeding.
+   g. Summarize what each parallel phase accomplished.
 
-4. **For independent phases**: Spawn separate subagents with `isolation: worktree` to work in parallel. Each subagent gets its own copy of the repo.
+4. **Between phase groups**: Suggest the user run `/clear` (Claude Code) or start a new chat (Cursor) to keep context clean before the next group.
 
 5. **After the final phase**: Spawn the reviewer subagent to review all changes. Say: "Use the reviewer subagent to review the implementation."
 

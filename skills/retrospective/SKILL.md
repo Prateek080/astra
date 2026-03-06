@@ -37,7 +37,7 @@ Review the recent development work and assess what went well, what didn't, and w
 
 ## Output
 
-```markdown
+``````markdown
 # Retrospective — [Feature Name] — [Date]
 
 ## What Went Well
@@ -63,10 +63,10 @@ Review the recent development work and assess what went well, what didn't, and w
 [Copy-pasteable rules discovered during this feature]
 ```
 
-### For .claude/rules/ (path-specific rules):
+### For .claude/rules/ and .cursor/rules/ (path-specific rules):
 ```markdown
 [Any file-type-specific rules discovered]
 ```
-```
+``````
 
 Format all suggestions as copy-pasteable markdown blocks so the user can add them directly to the relevant files.

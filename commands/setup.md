@@ -20,7 +20,7 @@ This is a fresh setup. Proceed normally.
 
 ## Step 1: Interview the user
 
-Use AskUserQuestion to learn their preferences:
+Ask the user (use AskUserQuestion if available, otherwise ask directly in chat) to learn their preferences:
 
 1. **Primary languages/frameworks** — "What languages and frameworks do you mainly work with?" (e.g., TypeScript + React, Python + FastAPI, Rust, Go)
 2. **Code style preferences** — "Any strong conventions? Tabs vs spaces, semicolons, naming conventions, etc."
@@ -50,6 +50,8 @@ Explain to the user:
 
 ## Step 3: Pre-approve common permissions
 
+> **Claude Code only**: The following step uses `/permissions`, which is a Claude Code interactive command. In Cursor, tool permissions are managed through Cursor's Settings UI — skip this step.
+
 Tell the user to run `/permissions` and suggest these allowlists based on their tech stack:
 
 **Always:**
@@ -76,6 +78,8 @@ Bash(cargo *)
 Explain: pre-approving these means Claude won't pause for confirmation on routine operations like running tests or checking git status.
 
 ## Step 4: Enable safety features
+
+> **Claude Code only**: `/sandbox` and `/statusline` are Claude Code interactive commands. In Cursor, file isolation and context usage are managed through Cursor's built-in UI.
 
 Tell the user:
 - Run `/sandbox` to enable file and network isolation — prevents accidental writes outside the project
@@ -113,8 +117,8 @@ The following sections are mandatory — include them in every generated CLAUDE.
 - After completing a task, reflect: what patterns worked, what didn't, what to remember next time.
 
 ## Quality
-- [rules based on their language/framework preferences]
-- [precision math rules if applicable]
+<!-- CUSTOMIZE: Add 2-3 rules for the user's language/framework. Example: "Use strict TypeScript — no `any` types without justification." Delete this comment in the output. -->
+- If the user works with money or precision math, add: "Use Decimal/BigDecimal for financial calculations. Never use floating point for money."
 - For non-trivial changes, pause and ask: "Is there a simpler way?" If the fix feels hacky, rethink it.
 - Find root causes. No temporary fixes. No suppressing errors to make symptoms go away.
 - Minimal impact — changes should only touch what's necessary.
@@ -132,10 +136,10 @@ The following sections are mandatory — include them in every generated CLAUDE.
 - Scope exploration narrowly. Summarize what changed after completing a task.
 
 ## Git
-- [rules based on their git workflow preferences]
+<!-- CUSTOMIZE: Add 2-3 rules for the user's git workflow. Example: "Use conventional commits (feat:, fix:, chore:)." Delete this comment in the output. -->
 
 ## Testing
-- [rules based on their testing approach]
+<!-- CUSTOMIZE: Add 1-2 rules for the user's test approach. Example: "Run pytest for backend, vitest for frontend." Delete this comment in the output. -->
 - Run the specific test for what changed after each meaningful change, not the full suite.
 - Never modify tests to make them pass — unless the test itself was wrong.
 - Never mark a task complete without proving it works.
@@ -145,13 +149,13 @@ The following sections are mandatory — include them in every generated CLAUDE.
 - After 2 failed attempts, stop and ask.
 ```
 
-Tailor the bracketed sections to their actual answers. Remove brackets and replace with real rules. Keep it under 50 lines — this gets loaded into every session, so brevity matters.
+Replace the `<!-- CUSTOMIZE -->` comments with actual rules based on the user's interview answers. Remove the comments from the output — they are instructions for you, not content for the file. Keep the final file under 50 lines — this gets loaded into every session, so brevity matters.
 
 ## Step 6: Confirm
 
 Show the user what was done:
 1. `~/.claude/settings.json` — created / updated (specify which)
 2. `~/.claude/CLAUDE.md` — created / updated (specify which, summarize changes on re-run)
-3. Remind them to run `/permissions`, `/sandbox`, and `/statusline` manually (these are interactive commands that can't be automated)
+3. **Claude Code only:** Remind them to run `/permissions`, `/sandbox`, and `/statusline` manually (these are interactive commands that can't be automated). **Cursor:** Skip this — permissions and safety are managed in Cursor's Settings UI.
 
 Tell the user: "Global setup complete. For each new project, run `/astra:init` to configure project-specific settings."

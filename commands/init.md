@@ -18,7 +18,7 @@ Before asking anything, silently explore:
 
 ## Step 2: Interview the user
 
-Use AskUserQuestion for things you can't detect from the codebase:
+Ask the user (use AskUserQuestion if available, otherwise ask directly in chat) for things you can't detect from the codebase:
 
 1. "I detected [stack summary]. Is that correct, or is there anything I'm missing?"
 2. "Any project-specific conventions not captured in config files?" (e.g., naming patterns, folder organization rules, API response format)
@@ -92,7 +92,7 @@ Example for a full-stack project:
 paths: ["backend/**"]
 ---
 - Follow existing route patterns in backend/app/api/ for new endpoints.
-- Use [ORM] models from backend/app/models/ — never write raw SQL.
+- Use the project's ORM models from backend/app/models/ — never write raw SQL.
 - All new endpoints need tests in backend/tests/.
 ```
 
@@ -111,11 +111,34 @@ Adapt the rules to what the project actually uses. Don't create generic rules �
 
 **For simpler single-directory projects**, a single rule file may suffice or none at all if CLAUDE.md covers everything.
 
-## Step 5: Confirm
+**Also generate Cursor rules** if the project uses Cursor (check for `.cursor/` directory or ask). Create matching rules in `.cursor/rules/` with `.mdc` extension. The rule body content is identical — only the frontmatter format differs:
+
+| | Claude Code (`.claude/rules/backend.md`) | Cursor (`.cursor/rules/backend.mdc`) |
+|---|---|---|
+| Marker | `<!-- astra:managed -->` (first line) | `<!-- astra:managed -->` (first line) |
+| Frontmatter | `paths: ["backend/**"]` | `description: Backend conventions` + `globs: backend/**` + `alwaysApply: false` |
+| Body | Same conventions | Same conventions |
+
+Apply the same re-run logic (detect marker, regenerate managed files, preserve user-created files) to `.cursor/rules/` as well.
+
+## Step 5: Update .gitignore
+
+Check the project's `.gitignore` file. If it doesn't already contain `docs/.agent-memory/`, append it:
+
+```
+# Astra agent memory (personal, not shared)
+docs/.agent-memory/
+```
+
+If no `.gitignore` exists, create one with this entry. This prevents personal agent learnings from being committed to the team's repository.
+
+## Step 6: Confirm
 
 Show the user what was done:
 - For each file, say **created** (new) or **updated** (changed) or **unchanged** (no diff).
 1. `CLAUDE.md` — project context (show contents; on re-run, summarize what changed)
-2. `.claude/rules/*.md` — path-specific rules (list them with a one-line summary each)
+2. `.claude/rules/*.md` — Claude Code rules (list them with a one-line summary each)
+3. `.cursor/rules/*.mdc` — Cursor rules (list them if generated)
+4. `.gitignore` — updated with `docs/.agent-memory/` (if not already present)
 
 Tell the user: "Project setup complete. You're ready to start building. Use `/astra:spec` for new features or `/astra:plan` if you already know what to build."

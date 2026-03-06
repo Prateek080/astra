@@ -1,6 +1,6 @@
 ---
 name: review-checklist
-description: Comprehensive code review checklist covering security, performance, quality, reusability, and tech debt
+description: Comprehensive code review checklist covering security, performance, quality, reusability, tech debt, accessibility, and API design
 user-invocable: false
 ---
 
@@ -62,3 +62,21 @@ Apply every section to the code under review. For each item, answer yes/no. Flag
 - Are edge cases and error paths tested, not just the happy path?
 - Are tests independent — no shared mutable state between test cases?
 - Were any existing tests weakened (assertions removed or loosened) to make them pass?
+
+## Accessibility (if frontend changes)
+
+- Do interactive elements (buttons, links, inputs) have accessible names (aria-label, visible text, or associated label)?
+- Is keyboard navigation supported — can all interactive elements be reached and activated without a mouse?
+- Do images have meaningful alt text (or empty alt="" for decorative images)?
+- Is color contrast sufficient (at least 4.5:1 for normal text, 3:1 for large text)?
+- Are ARIA roles and attributes used correctly (not overriding native semantics)?
+- Do form fields have associated `<label>` elements or `aria-labelledby`?
+
+## API Design (if API changes)
+
+- Are endpoints RESTful and consistent with existing API patterns (naming, HTTP verbs, status codes)?
+- Do API responses use consistent envelope/shape with existing endpoints?
+- Are request payloads validated and documented (expected types, required vs optional fields)?
+- Are error responses structured consistently (error code, message, details)?
+- Is pagination, filtering, and sorting handled for list endpoints?
+- Are breaking changes avoided, or versioned if unavoidable?

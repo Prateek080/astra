@@ -5,5 +5,8 @@
   "author": {
     "name": "Prateek Jain"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "commands": "./commands/",
+  "agents": "./agents/",
+  "skills": "./skills/"
 }

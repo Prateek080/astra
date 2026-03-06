@@ -3,13 +3,15 @@ description: Document a solved problem for future reference — builds a searcha
 argument-hint: "[problem description]"
 ---
 
+> **Arguments**: Any text the user provides after the command name serves as input. In Claude Code, this is substituted into $ARGUMENTS automatically.
+
 # Knowledge Compounding
 
 After solving a non-trivial problem (bug fix, architectural decision, tricky integration, performance optimization), document the solution so the team never has to solve it again.
 
 ## Process
 
-1. **Identify what was solved.** If $ARGUMENTS describes it, use that. Otherwise, look at recent changes (`git diff`, `git log -3`) and ask the user what they just solved.
+1. **Identify what was solved.** If $ARGUMENTS describes it, use that. Otherwise, look at recent changes (`git diff`, `git log -3`) and ask the user (use AskUserQuestion if available, otherwise ask directly in chat) what they just solved.
 
 2. **Determine the category.** Pick the best fit:
    - `bugs` — Root cause was non-obvious
