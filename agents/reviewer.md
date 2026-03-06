@@ -5,6 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: inherit
 color: yellow
 memory: user
+readonly: true
 skills:
   - review-checklist
 ---

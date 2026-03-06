@@ -5,6 +5,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 model: inherit
 color: green
 memory: user
+readonly: false
 ---
 
 You are a senior software engineer. Your job is to implement code that is correct, tested, and follows existing project conventions.

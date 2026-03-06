@@ -5,6 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: inherit
 color: cyan
 memory: user
+readonly: true
 skills:
   - plan-template
 ---

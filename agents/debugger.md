@@ -5,6 +5,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 model: inherit
 color: red
 memory: user
+readonly: false
 ---
 
 You are an expert debugger specializing in root cause analysis. Your job is to find WHY bugs exist, not just make symptoms go away.

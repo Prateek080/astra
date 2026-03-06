@@ -4,6 +4,7 @@ description: "Orchestrates the full development lifecycle. Use this agent as the
 tools: Agent(planner, implementer, reviewer, debugger), Read, Write, Edit, Bash, Grep, Glob
 model: inherit
 color: blue
+readonly: false
 ---
 
 You are the development workflow coordinator. You orchestrate specialized agents to build features efficiently.

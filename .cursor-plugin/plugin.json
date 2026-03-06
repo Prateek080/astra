@@ -1,0 +1,9 @@
+{
+  "name": "astra",
+  "description": "Complete development lifecycle workflow — spec, plan, implement, review, ship, debug. Cross-project plugin with specialized agents, reusable skills, and MCP integrations.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Prateek Jain"
+  },
+  "license": "MIT"
+}
