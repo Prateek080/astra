@@ -21,7 +21,7 @@ You are preparing changes for commit and pull request. Follow the pre-flight che
 7. Write a commit message:
    - First line: imperative mood, under 72 chars, explains WHY not WHAT
    - Body (if needed): context, trade-offs, or migration notes
-   - End with: `Co-Authored-By: Claude <noreply@anthropic.com>`
+   - Do NOT add Co-Authored-By or any AI attribution to the commit message
 
 ## Pull Request
 
