@@ -10,6 +10,17 @@ Cross-project. Stack-agnostic. Works in any codebase.
 
 ---
 
+## Prerequisites
+
+| Requirement | Why |
+|---|---|
+| [Claude Code](https://claude.ai/code) | Astra is a plugin for Claude Code |
+| `git` | Cloning Astra, version control in `/astra:ship` |
+| [`gh` CLI](https://cli.github.com/) | PR creation in `/astra:ship` |
+| `node` / `npx` | MCP servers (Context7, Playwright, DeepWiki) |
+
+---
+
 ## Installation
 
 **Step 1 — Clone the plugin:**
@@ -23,8 +34,11 @@ git clone git@github.com:Prateek080/astra.git ~/astra
 **Option A: Enable globally** *(Astra loads in every project, every session)*
 
 ```bash
-echo 'alias claude="claude --plugin-dir ~/astra"' >> ~/.zshrc
-source ~/.zshrc
+# zsh
+echo 'alias claude="claude --plugin-dir ~/astra"' >> ~/.zshrc && source ~/.zshrc
+
+# bash
+echo 'alias claude="claude --plugin-dir ~/astra"' >> ~/.bashrc && source ~/.bashrc
 ```
 
 **Option B: Enable for a single project** *(Astra loads only when you pass the flag)*
@@ -71,6 +85,15 @@ Scans your project (README, configs, directory structure), asks 2-4 clarifying q
 | `.claude/rules/frontend.md` | Frontend conventions — *"reuse `components/ui/`, follow existing data fetching patterns"* |
 
 Rules reference real files from *your* codebase, not generic advice. Only creates rules for directories that exist.
+
+### What files does Astra create in your project?
+
+| File | Created by | Commit to git? |
+|---|---|---|
+| `CLAUDE.md` | `/astra:init` | **Yes** — team shares project context |
+| `.claude/rules/*.md` | `/astra:init` | **Yes** — team shares conventions |
+| `SPEC.md` | `/astra:spec` | Optional — useful as documentation |
+| `PLAN.md` | `/astra:plan` | Optional — useful for tracking |
 
 **You're ready to build.**
 
