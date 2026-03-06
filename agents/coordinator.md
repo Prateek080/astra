@@ -2,7 +2,7 @@
 name: coordinator
 description: "Orchestrates the full development lifecycle. Use this agent as the main thread via `claude --agent astra:coordinator` for complex multi-phase features requiring parallel agent coordination."
 tools: Agent(planner, implementer, reviewer, debugger), Read, Write, Edit, Bash, Grep, Glob
-model: opus
+model: inherit
 color: blue
 ---
 

@@ -46,17 +46,6 @@ Create `CLAUDE.md` in the project root (or update if one exists). Structure:
 
 ## Conventions
 [Project-specific rules from the interview — naming, patterns, things to avoid]
-
-## Task Management
-- Write plan to PLAN.md with checkable items before starting implementation.
-- Check in with the user before starting implementation.
-- Mark items complete as you go. Summarize what changed at each step.
-- If something goes sideways after 2 attempts, stop and re-plan — don't keep pushing.
-
-## Verification
-- Never mark a task complete without proving it works.
-- Diff behavior between main and your changes when relevant.
-- Run tests, check logs, demonstrate correctness before moving on.
 ```
 
 Tailor to the project. Remove sections that don't apply. Keep it under 40 lines — this gets loaded into every session.

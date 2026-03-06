@@ -32,5 +32,4 @@ You are executing an implementation plan phase by phase. Each phase must pass it
 - Never skip a verification gate. If tests don't exist for the change, write them first.
 - If you've read many files and context feels heavy, summarize findings before continuing.
 - If something fails twice, stop and ask the user rather than trying more variations.
-- Don't introduce TODOs without a linked issue. Don't leave commented-out code.
 - After completing all phases, tell the user: "Implementation complete. Run `/astra:review` for a full review, then `/astra:ship` to commit and create a PR."

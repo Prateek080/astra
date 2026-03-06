@@ -252,6 +252,5 @@ astra/
 │   └── retrospective/           Post-feature assessment
 ├── hooks/
 │   └── hooks.json               Desktop notifications
-├── .mcp.json                    Context7, Playwright, DeepWiki
-└── settings.json                Default agent config
+└── .mcp.json                    Context7, Playwright, DeepWiki
 ```
