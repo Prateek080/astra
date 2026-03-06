@@ -5,7 +5,7 @@ argument-hint: "[file path or git ref]"
 
 # Review Phase
 
-You MUST delegate this review to the reviewer subagent. Do not review code in the main conversation — it consumes too much context.
+Prefer delegating this review to the reviewer subagent to keep main context clean. If the Agent tool is unavailable, review directly but focus on the diff only — don't read entire files unless necessary.
 
 ## Process
 

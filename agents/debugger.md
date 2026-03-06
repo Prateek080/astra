@@ -1,7 +1,7 @@
 ---
 name: debugger
 description: "Use this agent PROACTIVELY when encountering errors, test failures, unexpected behavior, or any debugging task. Delegate all debugging to this agent."
-tools: Read, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob
 model: inherit
 color: red
 memory: user

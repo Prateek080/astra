@@ -39,10 +39,8 @@ Start a fresh session (`/clear`) between spec and plan for clean context.
 1. **Initialize the project** — Set up repo, install dependencies, configure tooling.
 
 2. **Set up Claude Code for the project:**
-   - Run `/init` to generate a starter CLAUDE.md based on the codebase.
-   - Create `.claude/rules/` with path-specific rules (e.g., `backend.md`, `frontend.md`).
+   - Run `/astra:init` to generate CLAUDE.md and `.claude/rules/` for the project.
    - Install relevant LSP plugin: run `/plugin` and search for your language.
-   - Consider setting output style to "Explanatory" via `/config` while scaffolding — it helps Claude explain patterns as it works.
 
 3. **Spec the MVP** — `/astra:spec` to interview and produce SPEC.md.
    - Focus on MVP scope. Don't spec everything — spec the first milestone.
@@ -61,8 +59,8 @@ Start a fresh session (`/clear`) between spec and plan for clean context.
 ## Scenario B: New Feature in Existing Project
 
 1. **Spec with context** — `/astra:spec`
-   - Claude interviews you AND explores the existing codebase.
-   - The spec identifies which existing modules are affected.
+   - Claude interviews you about the feature, reading project context (CLAUDE.md, README).
+   - The spec identifies requirements, constraints, and scope boundaries.
 
 2. **Plan with awareness** — `/astra:plan`
    - The planner agent explores existing patterns and conventions.

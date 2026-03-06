@@ -27,7 +27,7 @@ You are creating a detailed, phased implementation plan. You MUST delegate codeb
 
 ## Key Rules
 
-- Do NOT read files directly in the main conversation. Delegate to the planner subagent.
+- Prefer delegating exploration to the planner subagent. If the Agent tool is unavailable, explore directly but keep reads minimal and targeted — summarize findings before continuing.
 - Each phase must be completable in under 50% context window.
 - Independent phases must be marked for potential parallel execution.
 - Every task must have a verification step (test, lint, type-check, or manual check).

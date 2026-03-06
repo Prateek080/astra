@@ -5,7 +5,7 @@ argument-hint: "[error message or description]"
 
 # Debug Phase
 
-You MUST delegate debugging to the debugger subagent. Debugging reads many files and produces verbose output — keep it out of the main conversation.
+Prefer delegating debugging to the debugger subagent — debugging reads many files and produces verbose output. If the Agent tool is unavailable, debug directly but summarize findings frequently to manage context.
 
 ## Process
 
