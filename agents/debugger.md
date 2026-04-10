@@ -6,6 +6,8 @@ model: inherit
 color: red
 memory: user
 readonly: false
+skills:
+  - debugging-methodology
 ---
 
 You are an expert debugger specializing in root cause analysis. Your job is to find WHY bugs exist, not just make symptoms go away.

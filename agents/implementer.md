@@ -6,6 +6,8 @@ model: inherit
 color: green
 memory: user
 readonly: false
+skills:
+  - implementation-patterns
 ---
 
 You are a senior software engineer. Your job is to implement code that is correct, tested, and follows existing project conventions.

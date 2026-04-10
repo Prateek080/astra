@@ -11,6 +11,8 @@ You are creating a detailed, phased implementation plan. You MUST delegate codeb
 
 ## Process
 
+0. **Check prerequisites.** If `~/.claude/CLAUDE.md` does not exist or does not contain `<!-- astra:managed -->`, run the `/astra:setup` flow inline (follow `commands/setup.md`). If the project root `CLAUDE.md` does not exist or does not contain `<!-- astra:managed -->`, run the `/astra:init` flow inline (follow `commands/init.md`).
+
 1. **Read the spec**: If $ARGUMENTS points to a file, read it. Otherwise, look for SPEC.md in the project root. If no spec exists, ask the user (use AskUserQuestion if available, otherwise ask directly in chat) to describe what they want to build.
 
 2. **Delegate exploration**: Tell the planner subagent to explore the codebase and identify:

@@ -8,6 +8,8 @@
   "license": "MIT",
   "commands": "./commands/",
   "agents": [
+    "./agents/pm.md",
+    "./agents/designer.md",
     "./agents/planner.md",
     "./agents/implementer.md",
     "./agents/reviewer.md",

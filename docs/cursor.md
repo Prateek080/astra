@@ -12,27 +12,23 @@ Astra works on Cursor with the same commands, agents, and skills as Claude Code.
 - `git`, `python3`
 - `node` / `npx` (for MCP servers)
 
-### Steps
+### Quick Install
 
-1. **Clone the repo** (skip if already done):
+```bash
+curl -fsSL https://raw.githubusercontent.com/Prateek080/astra/main/install.sh | bash -s -- --cursor
+```
 
-   ```bash
-   # SSH
-   git clone git@github.com:Prateek080/astra.git ~/astra
+This clones Astra, copies the plugin to `~/.cursor/plugins/astra/`, registers it, and enables it. MCP servers (Context7, Playwright, DeepWiki) are configured automatically.
 
-   # HTTPS
-   git clone https://github.com/Prateek080/astra.git ~/astra
-   ```
+<details>
+<summary><b>Manual install</b></summary>
 
-   > Clone path can be anywhere — the install script auto-detects the repo location.
+```bash
+git clone https://github.com/Prateek080/astra.git ~/astra
+bash ~/astra/scripts/install-cursor.sh
+```
 
-2. **Run the install script:**
-
-   ```bash
-   bash ~/astra/scripts/install-cursor.sh
-   ```
-
-   This copies the plugin (including MCP server configuration) to `~/.cursor/plugins/astra/`, registers it in `~/.claude/plugins/installed_plugins.json`, and enables it in `~/.claude/settings.json`. MCP servers (Context7, Playwright, DeepWiki) are configured automatically — no manual setup needed.
+</details>
 
 3. **Enable third-party plugins in Cursor:**
 
