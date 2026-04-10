@@ -11,6 +11,8 @@ You are executing an implementation plan phase by phase. Each phase must pass it
 
 ## Process
 
+0. **Check prerequisites.** If the project root `CLAUDE.md` does not exist or does not contain `<!-- astra:managed -->`, tell the user: "Project not set up yet." Then run the `/astra:init` flow inline (follow `commands/init.md`). Skip global setup check here — implementation should work without it.
+
 1. **Read the plan and determine scope**:
    - Look for PLAN.md in the project root.
    - If $ARGUMENTS is a file path, read that file as the plan instead.

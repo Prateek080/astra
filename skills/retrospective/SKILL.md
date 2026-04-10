@@ -14,7 +14,7 @@ Review the recent development work and assess what went well, what didn't, and w
 
 ## Analysis
 
-1. **Read artifacts**: Look for SPEC.md, PLAN.md, and recent git history (`git log --oneline -20`).
+1. **Read artifacts**: Look for SPEC.md, DESIGN.md, PLAN.md, PRODUCT.md, and recent git history (`git log --oneline -20`). Also check `docs/specs/`, `docs/designs/`, and `docs/plans/` for archived versions.
 
 2. **Plan vs Reality**:
    - Did the plan match what was actually implemented?
