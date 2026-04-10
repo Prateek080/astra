@@ -1,5 +1,5 @@
 ---
-description: "Automated pipeline: task → spec → design → plan → code. Review gates at every stage."
+description: "Automated pipeline: task → spec → design → plan → architect → code. Review gates at every stage."
 argument-hint: "[feature description]"
 ---
 
@@ -39,10 +39,13 @@ Check if `CLAUDE.md` exists in the project root and contains `<!-- astra:managed
 
 ### 0d. Check for resumption
 
-Check if SPEC.md, DESIGN.md, and PLAN.md exist in the project root.
-   - If all three exist and PLAN.md has phases (some possibly marked `**Status: complete**`): ask the user — "It looks like a previous forge run produced artifacts for [feature name from SPEC.md]. Do you want to resume implementation from where you left off, or start fresh for a new feature?"
-     - If resuming: skip Steps 1-3. Jump directly to Step 4 (Implementation) — it will detect completed phases and continue from there.
+Check if SPEC.md, DESIGN.md, PLAN.md, and TECHNICAL.md exist in the project root.
+   - If all four exist (or at least SPEC.md + PLAN.md) and PLAN.md has phases (some possibly marked `**Status: complete**`): ask the user — "It looks like a previous forge run produced artifacts for [feature name from SPEC.md]. Do you want to resume implementation from where you left off, or start fresh for a new feature?"
+     - If resuming: skip Steps 1-4. Jump directly to Step 5 (Implementation) — it will detect completed phases and continue from there.
      - If starting fresh: proceed to Step 1 (which archives existing artifacts first).
+   - If SPEC.md, DESIGN.md, and PLAN.md exist but no TECHNICAL.md: ask the user — "A spec, design, and plan exist for [feature name]. Do you want to continue to technical design, or start fresh?"
+     - If continuing: skip Steps 1-3. Jump to Step 4 (Architect).
+     - If starting fresh: proceed to Step 1.
    - If SPEC.md and DESIGN.md exist but no PLAN.md: ask the user — "A spec and design exist for [feature name]. Do you want to continue to planning, or start fresh?"
      - If continuing: skip Steps 1-2. Jump to Step 3 (Planner).
      - If starting fresh: proceed to Step 1.
@@ -71,6 +74,7 @@ Check if SPEC.md exists in the project root.
 - Move SPEC.md to `docs/specs/<feature-slug>.md`. Create `docs/specs/` if it does not exist. If the destination file already exists, append a timestamp suffix (e.g., `feature-slug-20260408.md`) to avoid overwriting previous archives.
 - If PLAN.md exists, move it to `docs/plans/<feature-slug>.md`. Create `docs/plans/` if it does not exist. If the destination file already exists, append a timestamp suffix.
 - If DESIGN.md exists, move it to `docs/designs/<feature-slug>.md`. Create `docs/designs/` if it does not exist. If the destination file already exists, append a timestamp suffix.
+- If TECHNICAL.md exists, move it to `docs/technical/<feature-slug>.md`. Create `docs/technical/` if it does not exist. If the destination file already exists, append a timestamp suffix.
 - Tell the user: "Archived previous artifacts for [feature name] to docs/."
 
 **If no SPEC.md exists:** Skip archiving.
@@ -128,9 +132,9 @@ If the user provides feedback (anything other than "approve"):
 
 ### 2a. Delegate to Designer agent
 
-Use the designer subagent to create a design for the feature. Say:
+Use the designer subagent to create a UI/UX design for the feature. Say:
 
-"Use the designer subagent to create a design for the feature specified in SPEC.md. The designer agent has the design-system skill loaded. It should read SPEC.md and PRODUCT.md, explore the codebase for existing UI components, design tokens, API patterns, and data models, then produce a DESIGN.md where every requirement R{n} maps to at least one design element D-R{n}."
+"Use the designer subagent to create a UI/UX design for the feature specified in SPEC.md. The designer agent has the design-system skill loaded. It should read SPEC.md and PRODUCT.md, explore the codebase for existing UI components, design tokens, and layout patterns, then produce a DESIGN.md where every frontend requirement R{n} maps to at least one design element D-R{n}. The designer handles visual design only — APIs and data models are handled separately by the architect."
 
 ### 2b. Write DESIGN.md
 
@@ -139,10 +143,9 @@ Write the Designer agent's output to DESIGN.md in the project root.
 ### 2c. Structural validation
 
 Read DESIGN.md back and verify:
-- `## Feature Type` exists — its value must be one of: frontend, backend, or full-stack
 - `## Traceability Matrix` exists
-- If feature type includes frontend (frontend or full-stack): at least one `## Components` section exists with component specifications
-- If feature type includes backend (backend or full-stack): at least one `## API Design` or `## Data Model` section exists
+- At least one component specification or user journey section exists
+- Design elements use D-R{n} traceability prefix
 
 If any required section is missing, tell the designer agent exactly what is missing and ask it to complete the design. Write the revised output to DESIGN.md. Re-validate. If validation fails a second time, stop and ask the user for guidance.
 
@@ -158,12 +161,12 @@ Ask the designer agent to address the gaps. Write the revised output to DESIGN.m
 ### 2e. User review gate
 
 Present a summary to the user:
-- **Feature type** — frontend, backend, or full-stack
-- **Design decisions summary** — key choices made (component library, API approach, data model strategy)
+- **Design decisions summary** — key choices made (component library, visual theme, layout approach)
 - **Traceability matrix** — show the R{n} to D-R{n} mapping, one per line
-- **Coverage** — "All N requirements have design coverage" or list any remaining gaps
+- **Coverage** — "All N frontend requirements have design coverage" or list any remaining gaps
+- **Backend requirements** — note any R{n} marked as "Technical — handled by architect agent"
 
-Ask: "Does this design look right? Reply with 'approve' to proceed to planning, or provide feedback to revise."
+Ask: "Does this UI/UX design look right? Reply with 'approve' to proceed to planning, or provide feedback to revise."
 
 ### 2f. Handle feedback
 
@@ -220,7 +223,7 @@ Present a summary to the user:
   One chain per requirement.
 - **Parallel phases** — list any phases marked for parallel execution
 
-Ask: "Does this plan look right? Reply with 'approve' to start implementation, or provide feedback to revise."
+Ask: "Does this plan look right? Reply with 'approve' to proceed to technical design, or provide feedback to revise."
 
 ### 3f. Handle feedback
 
@@ -233,19 +236,73 @@ If the user provides feedback (anything other than "approve"):
 
 ---
 
-## Step 4: Implementation
+## Step 4: Architect Agent — TECHNICAL.md
+
+### 4a. Delegate to Architect agent
+
+Use the architect subagent to create a technical design for the feature. Say:
+
+"Use the architect subagent to create a technical design for the feature specified in SPEC.md. The architect agent has the technical-architecture skill loaded. It should read SPEC.md, DESIGN.md, PLAN.md, and PRODUCT.md, explore the codebase for existing API patterns, data models, and service architecture, then produce a TECHNICAL.md where every backend requirement R{n} maps to at least one technical element T-R{n}. Include ADRs for non-trivial decisions, exact API contracts, exact data model schemas, error handling taxonomy, and security considerations."
+
+### 4b. Write TECHNICAL.md
+
+Write the Architect agent's output to TECHNICAL.md in the project root.
+
+### 4c. Structural validation
+
+Read TECHNICAL.md back and verify:
+- `## Traceability Matrix` exists
+- At least one ADR section exists (if non-trivial decisions were made)
+- API contracts have request/response schemas with types
+- Data models have fields, types, and constraints
+- Technical elements use T-R{n} traceability prefix
+
+If any required section is missing, tell the architect agent exactly what is missing and ask it to complete the design. Write the revised output to TECHNICAL.md. Re-validate. If validation fails a second time, stop and ask the user for guidance.
+
+### 4d. Cross-validation against SPEC.md
+
+Extract all T-R{n} identifiers from TECHNICAL.md (e.g., T-R1, T-R2, T-R3). Combine with D-R{n} identifiers from DESIGN.md. Compare against the R{n} list from Step 1e.
+
+For every R{n} that has NEITHER a D-R{n} in DESIGN.md NOR a T-R{n} in TECHNICAL.md, report the gap:
+"Requirements missing design/technical coverage: [list each R{n} with its title]."
+
+Ask the appropriate agent (designer for UI gaps, architect for technical gaps) to address them. Re-validate. If gaps remain after a second attempt, stop and ask the user for guidance.
+
+### 4e. User review gate
+
+Present a summary to the user:
+- **ADR summary** — list each ADR with its title and decision
+- **API endpoints** — list each endpoint (method + path + brief description)
+- **Data models** — list each entity with field count
+- **Traceability matrix** — show the R{n} to T-R{n} mapping, one per line
+- **Full coverage** — "All N requirements have design (D-R{n}) and/or technical (T-R{n}) coverage" or list remaining gaps
+
+Ask: "Does this technical design look right? Reply with 'approve' to start implementation, or provide feedback to revise."
+
+### 4f. Handle feedback
+
+If the user provides feedback (anything other than "approve"):
+- Pass the specific feedback back to the architect agent for revision.
+- Write the revised output to TECHNICAL.md.
+- Re-run structural validation (Step 4c) and cross-validation (Step 4d).
+- Re-present the summary (Step 4e).
+- Repeat until the user approves.
+
+---
+
+## Step 5: Implementation
 
 Delegate implementation to the `implement` command logic (see `commands/implement.md`). That command already handles phase execution, parallel batching, worktree isolation, and subagent delegation. Do NOT re-implement that logic here — invoke it with the additions below.
 
-### 4a. Read the plan and determine scope
+### 5a. Read the plan and determine scope
 
 Read PLAN.md. Scan for phases already marked `**Status: complete**` — skip them and tell the user which phases were already completed. Scan for parallel phases and group them into batches (consecutive `Parallel: yes` phases form one batch; sequential phases run alone). Pass the phase list to the implementer.
 
-### 4b. Execute phase groups in order
+### 5b. Execute phase groups in order
 
 Follow `commands/implement.md` for phase execution. That command handles sequential phases, parallel batches (with worktree isolation and merging), verification gates, and PLAN.md status updates. The forge command's role here is to orchestrate the phases in order — the implementer handles the execution details for each phase.
 
-### 4c. Per-phase mini-review
+### 5c. Per-phase mini-review
 
 After each phase completes and its test gate passes, spawn a reviewer. Say:
 
@@ -258,7 +315,7 @@ If the reviewer reports critical findings:
 
 If the reviewer reports only warnings or suggestions, note them for the final review and proceed.
 
-### 4d. Between phase groups
+### 5d. Between phase groups
 
 After completing a phase group (one sequential phase or one parallel batch), suggest: "Consider running `/clear` (Claude Code) or starting a new chat (Cursor) to keep context clean before the next phase group."
 
@@ -266,7 +323,7 @@ If you have many more phases to go and context is getting heavy, strongly recomm
 
 ---
 
-## Step 5: Final Review
+## Step 6: Final Review
 
 After all phases are complete:
 
@@ -288,9 +345,9 @@ After all phases are complete:
 
 ---
 
-## Step 6: Wrap-Up
+## Step 7: Wrap-Up
 
-### 6a. Update PRODUCT.md
+### 7a. Update PRODUCT.md
 
 **If PRODUCT.md does not exist**, create it:
 
@@ -332,7 +389,7 @@ After all phases are complete:
 - Summarize older features into a single compact line each: just the feature name and date.
 - Consolidate repeated entries in Design System, API Surface, and Data Model sections.
 
-### 6b. Archive artifacts
+### 7b. Archive artifacts
 
 Extract the feature slug from the SPEC.md `# Feature:` heading. Convert to kebab-case, max 50 characters.
 
@@ -340,10 +397,11 @@ Move the artifacts:
 - SPEC.md to `docs/specs/{slug}.md`
 - DESIGN.md to `docs/designs/{slug}.md`
 - PLAN.md to `docs/plans/{slug}.md`
+- TECHNICAL.md to `docs/technical/{slug}.md`
 
 Create the directories if they do not exist. If any destination file already exists, append a timestamp suffix (e.g., `{slug}-20260408.md`) to avoid overwriting previous archives. Tell the user where each file was archived.
 
-### 6c. Document solutions
+### 7c. Document solutions
 
 If any non-obvious problems were solved during implementation (workarounds, architectural decisions, tricky integrations), offer to document them:
 
@@ -351,7 +409,7 @@ If any non-obvious problems were solved during implementation (workarounds, arch
 
 If the user agrees, delegate to compound. If they decline, continue.
 
-### 6d. Collect feedback
+### 7d. Collect feedback
 
 Ask the user: "Forge complete! Two quick questions for improving future runs: (1) What worked well? (2) What should be improved?"
 
@@ -368,7 +426,7 @@ Ask the user: "Forge complete! Two quick questions for improving future runs: (1
 
 On future forge runs, read `docs/.agent-memory/forge-feedback.md` in Step 0 to learn from past runs.
 
-### 6e. Next steps
+### 7e. Next steps
 
 Tell the user: "Run `/astra:ship` to commit and create a PR. Or run `/astra:retrospective` for a detailed assessment of the process."
 
@@ -394,6 +452,6 @@ Tell the user: "Run `/astra:ship` to commit and create a PR. Or run `/astra:retr
 
 8. **Keep the user informed.** At each stage transition, briefly state what was completed and what comes next. Do not dump raw agent output — summarize and present the key decisions and findings.
 
-9. **Handle interruptions gracefully.** If the user wants to stop mid-pipeline, tell them exactly where to resume: "You can resume by running `/astra:forge` again — it will detect SPEC.md/DESIGN.md/PLAN.md and pick up where you left off." (Note: resumption depends on which artifacts exist in the project root.)
+9. **Handle interruptions gracefully.** If the user wants to stop mid-pipeline, tell them exactly where to resume: "You can resume by running `/astra:forge` again — it will detect SPEC.md/DESIGN.md/PLAN.md/TECHNICAL.md and pick up where you left off." (Note: resumption depends on which artifacts exist in the project root.)
 
 10. **No partial artifacts.** If a stage fails completely and cannot produce its artifact, do not leave a broken SPEC.md/DESIGN.md/PLAN.md in the project root. Either produce a valid artifact or leave the previous state intact.

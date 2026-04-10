@@ -24,7 +24,7 @@ Just ask Claude directly. Optionally run `/astra:review` after to catch anything
 
 ### Large (new feature, unclear scope, multiple modules, needs discovery)
 ```
-/astra:spec → fresh session → /astra:design → fresh session → /astra:plan → /astra:implement → /astra:review → /astra:ship
+/astra:spec → fresh session → /astra:design → fresh session → /astra:plan → /astra:architect → /astra:implement → /astra:review → /astra:ship
 ```
 Start a fresh session between stages for clean context (Claude Code: `/clear`, Cursor: new chat).
 
@@ -32,7 +32,7 @@ Start a fresh session between stages for clean context (Claude Code: `/clear`, C
 ```
 /astra:forge "feature description"
 ```
-Forge chains spec → design → plan → implement → review automatically, with user approval gates between each stage. Best for features where you want the full pipeline managed for you.
+Forge chains spec → design → plan → architect → implement → review automatically, with user approval gates between each stage. Best for features where you want the full pipeline managed for you.
 
 ### Optimization / Refactor (improving existing code)
 ```
@@ -53,17 +53,21 @@ Forge chains spec → design → plan → implement → review automatically, wi
    - Focus on MVP scope. Don't spec everything — spec the first milestone.
 
 4. **Design the MVP** — Start a fresh session, then `/astra:design` to create DESIGN.md.
-   - Establishes component patterns, API contracts, and data models before coding.
-   - Skip for backend-only projects with simple APIs.
+   - Establishes UI component patterns, visual design, and user flows.
+   - Skip for backend-only projects.
 
 5. **Plan the MVP** — Start a fresh session, then `/astra:plan` to create phased milestones.
    - Each phase should be independently deployable.
 
-6. **Build phase by phase** — `/astra:implement` for each phase.
+6. **Architect the MVP** — Start a fresh session, then `/astra:architect` to create TECHNICAL.md.
+   - Locks down API contracts, data models, and system architecture.
+   - Skip for frontend-only projects with no backend.
+
+7. **Build phase by phase** — `/astra:implement` for each phase.
    - Start fresh between phases for clean context.
    - `/astra:review` after each phase, not just at the end.
 
-7. **Ship incrementally** — `/astra:ship` per phase. Small PRs, not one giant PR.
+8. **Ship incrementally** — `/astra:ship` per phase. Small PRs, not one giant PR.
 
 ---
 
@@ -74,21 +78,26 @@ Forge chains spec → design → plan → implement → review automatically, wi
    - The spec identifies requirements, constraints, and scope boundaries.
 
 2. **Design with awareness** — `/astra:design`
-   - Designer explores existing codebase patterns (components, tokens, API structure, data models).
-   - Produces DESIGN.md with concrete specs mapped to each requirement (D-R{n} → R{n}).
-   - Skip for trivial features or when the approach is already clear.
+   - Designer explores existing UI patterns (components, tokens, layout conventions).
+   - Produces DESIGN.md with UI/UX specs mapped to each requirement (D-R{n} → R{n}).
+   - Skip for backend-only features or when the UI approach is already clear.
 
 3. **Plan with awareness** — `/astra:plan`
    - The planner agent explores existing patterns and conventions.
    - Plan explicitly states "modify X" vs "create Y".
    - Plan references existing files and design elements (D-R{n}) to follow.
 
-4. **Build with reuse** — `/astra:implement`
+4. **Architect with awareness** — `/astra:architect`
+   - Architect explores existing API patterns, data models, and service architecture.
+   - Produces TECHNICAL.md with API contracts, data models, ADRs mapped to each requirement (T-R{n} → R{n}).
+   - Skip for frontend-only features with no backend changes.
+
+5. **Build with reuse** — `/astra:implement`
    - Before writing new code, Claude searches for existing patterns.
    - Follows the project's existing conventions (naming, structure, error handling).
    - Runs existing tests after each change to catch regressions.
 
-5. **Review and ship** — `/astra:review` then `/astra:ship`
+6. **Review and ship** — `/astra:review` then `/astra:ship`
 
 ---
 
@@ -121,10 +130,12 @@ Forge chains spec → design → plan → implement → review automatically, wi
 1. **Run forge** — `/astra:forge "add notifications system"`
    - PM agent interviews you, produces SPEC.md with numbered requirements (R1, R2...) and acceptance criteria
    - You review and approve the spec
-   - Designer agent explores the codebase, produces DESIGN.md mapping every requirement to design elements (D-R{n})
-   - You review and approve the design
+   - Designer agent explores the codebase, produces DESIGN.md mapping UI requirements to design elements (D-R{n})
+   - You review and approve the UI/UX design
    - Planner agent produces PLAN.md with full traceability (R{n} → D-R{n} → Phase tasks)
    - You review and approve the plan
+   - Architect agent produces TECHNICAL.md with API contracts, data models, and ADRs (T-R{n})
+   - You review and approve the technical design
    - Implementer executes phase by phase with reviewer checking each phase
    - Final review validates all acceptance criteria are met
    - PRODUCT.md is updated with the new feature, artifacts are archived
@@ -143,8 +154,9 @@ Real development isn't linear. Here's how to handle common disruptions:
 
 | Situation | What to do |
 |---|---|
-| Spec changed after planning | Update SPEC.md, then re-run `/astra:design` (if using design) and `/astra:plan` |
+| Spec changed after planning | Update SPEC.md, then re-run `/astra:design` (if using design), `/astra:plan`, and `/astra:architect` |
 | Design changed after planning | Update DESIGN.md, then re-run `/astra:plan` — it reads the updated design |
+| Technical design changed | Update TECHNICAL.md, then re-run `/astra:implement` — it reads the updated technical design |
 | Review found architectural issues | Small: fix in place. Fundamental: re-plan the affected phases |
 | Later phase reveals earlier phase was wrong | Fix the earlier phase, update PLAN.md, then continue |
 | Scope creep during implementation | Stop. Update SPEC.md with the new scope, re-run design and plan |

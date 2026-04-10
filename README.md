@@ -5,7 +5,7 @@
 Works with [Claude Code](https://claude.ai/code) and [Cursor](https://cursor.com). Same commands, agents, and skills — one plugin, both editors.
 
 ```
-Idea → Spec → Design → Plan → Implement → Review → Ship
+Idea → Spec → Design → Plan → Architect → Implement → Review → Ship
 ```
 
 **Or automate the whole thing:**
@@ -126,10 +126,12 @@ Rules reference real files from *your* codebase, not generic advice. Only create
 | `.cursor/rules/*.mdc` | `/astra:init` | **Yes** — Cursor conventions |
 | `PRODUCT.md` | `/astra:forge` | **Yes** — living product context, read by all agents |
 | `SPEC.md` | `/astra:spec` or `/astra:forge` | Optional — useful as documentation |
-| `DESIGN.md` | `/astra:design` or `/astra:forge` | Optional — useful for design reference |
+| `DESIGN.md` | `/astra:design` or `/astra:forge` | Optional — useful for UI/UX design reference |
 | `PLAN.md` | `/astra:plan` or `/astra:forge` | Optional — useful for tracking |
+| `TECHNICAL.md` | `/astra:architect` or `/astra:forge` | Optional — useful for API/data model reference |
 | `docs/specs/*.md` | Auto-archived by `/astra:spec` and `/astra:forge` | Optional — previous feature specs |
 | `docs/designs/*.md` | Auto-archived by `/astra:design` and `/astra:forge` | Optional — previous feature designs |
+| `docs/technical/*.md` | Auto-archived by `/astra:architect` and `/astra:forge` | Optional — previous technical designs |
 | `docs/plans/*.md` | Auto-archived by `/astra:spec` and `/astra:forge` | Optional — previous feature plans |
 | `docs/solutions/*.md` | `/astra:compound` | Optional — project knowledge base |
 | `docs/.agent-memory/*.md` | Agents (auto) | **No** — personal learnings, add to `.gitignore` |
@@ -147,7 +149,7 @@ Not every task needs the full workflow. Match the commands to the size of the ta
 | **Tiny** | Typo, rename, config change | Just ask Claude directly |
 | **Small** | Single-file fix, add a field | Just ask Claude → optionally `review` |
 | **Medium** | Feature across 2-5 files | `plan` → `implement` → `review` → `ship` |
-| **Large** | New feature, unclear scope | `spec` → `design` → `plan` → `implement` → `review` → `ship` |
+| **Large** | New feature, unclear scope | `spec` → `design` → `plan` → `architect` → `implement` → `review` → `ship` |
 | **End-to-End** | Full automation with review gates | **`forge "feature description"`** |
 | **Cleanup** | Refactor, optimize, pay debt | `debt-audit` → `plan` → `implement` → `review` → `ship` |
 
@@ -178,10 +180,11 @@ Not every task needs the full workflow. Match the commands to the size of the ta
 The fully automated pipeline. Give it a feature description and it orchestrates the entire flow:
 
 1. **PM agent** interviews you → produces `SPEC.md` with numbered requirements → you approve
-2. **Designer agent** explores your codebase → produces `DESIGN.md` with component/API specs → you approve
+2. **Designer agent** explores your codebase → produces `DESIGN.md` with UI/UX specs → you approve
 3. **Planner agent** creates phased `PLAN.md` with full traceability → you approve
-4. **Implementer** builds phase by phase with **reviewer** checking each phase
-5. Final review validates all acceptance criteria → `PRODUCT.md` updated → artifacts archived
+4. **Architect agent** explores your codebase → produces `TECHNICAL.md` with API contracts, data models, ADRs → you approve
+5. **Implementer** builds phase by phase with **reviewer** checking each phase
+6. Final review validates all acceptance criteria → `PRODUCT.md` updated → artifacts archived
 
 Every requirement is traced through every stage: R1 → D-R1 → Phase 1 Task 2 → Test. Nothing falls through the cracks.
 
@@ -206,7 +209,7 @@ Delegates to a PM subagent with a **pm-framework skill** covering PRD methodolog
 
 ---
 
-### `/astra:design` — Create an implementable design
+### `/astra:design` — Create a UI/UX design
 
 | | |
 |---|---|
@@ -219,12 +222,32 @@ Delegates to a PM subagent with a **pm-framework skill** covering PRD methodolog
 /astra:design "redesign the navigation"
 ```
 
-Delegates to a designer subagent with a **design-system skill**. Explores your codebase to understand existing patterns (components, tokens, API structure, data models), then produces `DESIGN.md` with:
-- **Frontend features**: Component specs with exact tokens, states, accessibility, responsive behavior
-- **Backend features**: API endpoints, data models, system architecture
-- **Full-stack**: Both
+Delegates to a designer subagent with a **design-system skill**. Explores your codebase to understand existing UI patterns (components, tokens, layout conventions), then produces `DESIGN.md` with user journeys, component specs with exact tokens, states, accessibility requirements, and responsive behavior.
 
-Every design element traces to a spec requirement (D-R1 → R1). Reuses existing codebase patterns instead of reinventing.
+Every design element traces to a spec requirement (D-R1 → R1). Reuses existing codebase patterns instead of reinventing. Backend concerns (APIs, data models) are handled separately by `/astra:architect`.
+
+---
+
+### `/astra:architect` — Create a technical design
+
+| | |
+|---|---|
+| **Input** | `SPEC.md`, `DESIGN.md`, `PLAN.md` |
+| **Output** | `TECHNICAL.md` |
+| **Next** | `/astra:implement` |
+
+```
+/astra:architect
+```
+
+Delegates to an architect subagent with a **technical-architecture skill**. Explores your codebase to understand existing API patterns, data models, and service architecture, then produces `TECHNICAL.md` with:
+- **API contracts**: Exact endpoints, request/response schemas, status codes, error shapes
+- **Data models**: Fields, types, constraints, relationships, indexes, migrations
+- **Architecture Decision Records (ADRs)**: Documented reasoning for non-trivial choices
+- **Error handling**: Taxonomy, retry strategies, response envelope
+- **Security**: Auth flows, input validation, audit logging
+
+Every technical element traces to a spec requirement (T-R1 → R1). Comes after planning because technical decisions are informed by the implementation phases.
 
 ---
 
@@ -362,7 +385,8 @@ Commands delegate to specialized agents, each running in its own context window.
 | Agent | Role | Skill | Tools | Learns |
 |---|---|---|---|---|
 | **pm** | Product discovery, requirements, PRD | pm-framework | Read-only | Yes |
-| **designer** | UI/UX specs, API design, data models | design-system | Read-only | Yes |
+| **designer** | UI/UX specs, visual design, components | design-system | Read-only | Yes |
+| **architect** | API contracts, data models, system architecture | technical-architecture | Read-only | Yes |
 | **planner** | Explores codebase, creates plans | plan-template | Read-only | Yes |
 | **implementer** | Writes code, runs tests | implementation-patterns | Read + Write | Yes |
 | **reviewer** | 50+ item review checklist | review-checklist | Read-only | Yes |
@@ -392,7 +416,8 @@ astra/
 │   ├── init.md                      Per-project setup
 │   ├── forge.md                     Automated end-to-end pipeline
 │   ├── spec.md                      Feature discovery (delegates to PM agent)
-│   ├── design.md                    Design document (delegates to designer agent)
+│   ├── design.md                    UI/UX design (delegates to designer agent)
+│   ├── architect.md                 Technical design (delegates to architect agent)
 │   ├── plan.md                      Phased planning
 │   ├── implement.md                 Phase-by-phase execution
 │   ├── review.md                    Code review
@@ -405,7 +430,8 @@ astra/
 │
 ├── agents/                          Specialized subagents
 │   ├── pm.md                        Product Manager — requirements, PRD
-│   ├── designer.md                  Designer — UI specs, API design, data models
+│   ├── designer.md                  Designer — UI/UX specs, visual design
+│   ├── architect.md                 Architect — API contracts, data models, system design
 │   ├── planner.md                   Codebase exploration, plan creation
 │   ├── implementer.md               Code execution, pattern reuse
 │   ├── reviewer.md                  Review checklist
@@ -413,7 +439,8 @@ astra/
 │
 ├── skills/                          Reusable knowledge (preloaded into agents)
 │   ├── pm-framework/                PRD methodology → PM agent
-│   ├── design-system/               Design methodology → designer agent
+│   ├── design-system/               UI/UX design methodology → designer agent
+│   ├── technical-architecture/      API, data model, architecture methodology → architect agent
 │   ├── implementation-patterns/     Code patterns, test-first → implementer agent
 │   ├── debugging-methodology/       Root cause analysis → debugger agent
 │   ├── review-checklist/            50+ checks → reviewer agent

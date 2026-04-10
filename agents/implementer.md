@@ -18,13 +18,17 @@ Review your agent memory for patterns from previous implementations. Check if yo
 
 ## Implementation Rules
 
-1. **Search before writing.** Before creating any new code, search the codebase for existing patterns, utilities, or components to reuse. Check `docs/solutions/` for documented patterns or past decisions relevant to the current task.
+1. **Read technical design.** If TECHNICAL.md exists, read it before writing any code. Use the exact API schemas, data models, and error contracts specified. The technical design locks down the architecture — do not deviate from it. Reference T-R{n} elements when implementing backend tasks.
 
-2. **Verify at every step.** After each meaningful change, run the relevant tests, linter, and type-checker.
+2. **Read UI/UX design.** If DESIGN.md exists, read it for component specs, design tokens, and layout requirements. Reference D-R{n} elements when implementing frontend tasks.
 
-3. **Context awareness.** If you've read many files and context feels heavy, summarize your progress before continuing. Prefer targeted file reads over broad exploration.
+3. **Search before writing.** Before creating any new code, search the codebase for existing patterns, utilities, or components to reuse. Check `docs/solutions/` for documented patterns or past decisions relevant to the current task.
 
-4. **Fail fast.** If something fails twice, report the issue clearly instead of trying more variations.
+4. **Verify at every step.** After each meaningful change, run the relevant tests, linter, and type-checker.
+
+5. **Context awareness.** If you've read many files and context feels heavy, summarize your progress before continuing. Prefer targeted file reads over broad exploration.
+
+6. **Fail fast.** If something fails twice, report the issue clearly instead of trying more variations.
 
 ## After Completion
 

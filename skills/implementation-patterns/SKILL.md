@@ -16,7 +16,8 @@ Before creating ANY new code, search the codebase systematically:
 - **Project conventions:** Identify naming conventions (camelCase vs snake_case, file naming like `user-service.ts` vs `UserService.ts`), directory structure (where do services live? where do tests live?), error handling patterns, and logging approach.
 - **Documented patterns:** Check `docs/solutions/` for architectural decisions or pattern documentation. These are authoritative -- follow them over what you infer from code.
 - **Test conventions:** Read 2-3 existing test files to understand the testing framework, assertion style, file naming (`*.test.ts` vs `*.spec.ts`), mocking approach, and setup/teardown patterns.
-- **Design tokens:** If DESIGN.md exists, read the D-R{n} specs. They contain concrete values (color tokens, spacing scales, type ramps, component schemas, API endpoint shapes) that must be used exactly as specified. Do not improvise values that are defined in DESIGN.md.
+- **UI/UX design tokens:** If DESIGN.md exists, read the D-R{n} specs. They contain concrete values (color tokens, spacing scales, type ramps, component specs) that must be used exactly as specified. Do not improvise values that are defined in DESIGN.md.
+- **Technical design specs:** If TECHNICAL.md exists, read the T-R{n} specs. They contain exact API schemas, data models, error contracts, and architecture decisions that must be followed precisely. Do not deviate from API endpoints, request/response shapes, or data model fields defined in TECHNICAL.md. ADRs in TECHNICAL.md document key architecture decisions — follow them.
 
 Build a mental model before writing anything: "In this project, a [feature type] is built by creating [files] in [locations] following [pattern], tested with [framework] using [conventions]."
 

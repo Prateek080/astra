@@ -1,5 +1,5 @@
 ---
-description: Create an implementable design document from a spec or feature description
+description: Create a UI/UX design document from a spec or feature description
 argument-hint: "[feature name or path to SPEC.md]"
 ---
 
@@ -7,7 +7,7 @@ argument-hint: "[feature name or path to SPEC.md]"
 
 # Design Phase
 
-You are creating a detailed, implementable design document. You MUST delegate codebase exploration and design work to the designer subagent to keep main context clean.
+You are creating a detailed, implementable UI/UX design document. You MUST delegate codebase exploration and design work to the designer subagent to keep main context clean. This covers visual design only — user flows, components, tokens, accessibility, responsive behavior. Technical architecture (APIs, data models) is handled separately by `/astra:architect`.
 
 ## Process
 
@@ -22,7 +22,7 @@ You are creating a detailed, implementable design document. You MUST delegate co
 
 3. **Delegate design**: Tell the designer subagent to explore the codebase and create the design.
 
-   Say: "Use the designer subagent to design the feature described in [SPEC.md / $ARGUMENTS]. The designer should read PRODUCT.md for existing context, explore the codebase for existing patterns (components, tokens, API structure, data models), and produce a DESIGN.md where every requirement R{n} from the spec maps to a design element D-R{n}."
+   Say: "Use the designer subagent to create a UI/UX design for the feature described in [SPEC.md / $ARGUMENTS]. The designer should read PRODUCT.md for existing context, explore the codebase for existing UI patterns (components, tokens, layout conventions), and produce a DESIGN.md where every frontend requirement R{n} from the spec maps to a design element D-R{n}. The designer handles visual design only — APIs and data models are handled by the architect agent."
 
 4. **Write DESIGN.md**: Write the designer's output to DESIGN.md in the project root.
 
@@ -30,7 +30,7 @@ You are creating a detailed, implementable design document. You MUST delegate co
 
 6. **Present to user**: Show the design summary — feature type, key design decisions, traceability matrix.
 
-7. After the design is approved, tell the user: "Design complete. Run `/astra:plan` to create the implementation plan, or `/astra:forge` for the full automated pipeline."
+7. After the design is approved, tell the user: "UI/UX design complete. Run `/astra:plan` to create the implementation plan, then `/astra:architect` for technical design, or `/astra:forge` for the full automated pipeline."
 
 ## Key Rules
 
@@ -38,3 +38,4 @@ You are creating a detailed, implementable design document. You MUST delegate co
 - Every design element must trace to a spec requirement (D-R{n} -> R{n}).
 - Design must be directly implementable — concrete values, not vague descriptions.
 - Reuse existing codebase patterns. The designer must explore before creating.
+- This is UI/UX only. Backend requirements should be noted as "Technical — handled by architect agent" in the traceability matrix.
