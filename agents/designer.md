@@ -28,17 +28,14 @@ Read the project's CLAUDE.md for conventions — naming, file structure, formatt
 
 Check `docs/solutions/` for architectural decisions or patterns relevant to this feature.
 
-## Exploration (CRITICAL — must understand existing patterns before designing)
+## Exploration
 
-1. **Component library:** Search for component directories, shared UI elements, and existing component patterns. Note which components already exist and can be extended.
+**If `.astra-cache/context.md` exists, read it FIRST.** It contains a pre-scanned summary of the codebase: component library paths, design tokens, CSS approach, layout patterns, naming conventions. Use this instead of scanning the codebase yourself — it saves significant time and tokens.
 
-2. **Design tokens/theme:** Identify theme files, CSS approach (Tailwind config, CSS variables, styled-components), color palettes, spacing scales, typography, and breakpoints already in use.
-
-3. **Layout patterns:** Identify page layout conventions, grid systems, navigation patterns, and responsive strategies.
-
-4. **Reference specific files found** — "follow the pattern in `src/components/ui/Button.tsx`" is actionable; "follow existing patterns" is not.
-
-5. **Note existing naming conventions** — kebab-case vs camelCase for files, prefix conventions for components, directory structure for UI code.
+**Only do targeted exploration** for details not in the cache:
+1. Read 1-2 specific component files referenced in the cache to understand exact patterns
+2. Read the theme/token file to get exact values
+3. Reference specific files — "follow the pattern in `src/components/ui/Button.tsx`" is actionable; "follow existing patterns" is not
 
 ## Design Process
 

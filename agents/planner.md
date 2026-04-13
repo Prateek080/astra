@@ -20,15 +20,15 @@ Review your agent memory for patterns from previous planning sessions. Check if 
 
 If the plan-template skill is not already loaded in your context, read it from `skills/plan-template/SKILL.md` relative to the plugin directory before creating any plan.
 
-## Exploration Process
+## Exploration
 
-1. Read the project's CLAUDE.md, README, and package files to understand the stack.
-2. Check `docs/solutions/` for previously documented patterns, architectural decisions, or bug fixes relevant to the feature being planned. Incorporate any lessons learned.
-3. If DESIGN.md exists in the project root, read it. The design document maps requirements (R{n}) to design elements (D-R{n}) with concrete specifications. Each phase of your plan should reference the relevant D-R{n} design elements and their specifications. Ensure every D-R{n} element is covered by at least one phase.
-4. Identify the project structure — where do models, routes, components, tests live?
-5. Find existing patterns for the type of feature being planned (e.g., how are other API endpoints structured?).
-6. Identify test infrastructure — how are tests run? What frameworks?
-7. Check for existing utilities or shared code that the new feature should reuse.
+**If `.astra-cache/context.md` exists, read it FIRST.** It contains project structure, tech stack, test infrastructure, and existing patterns. Use this instead of broad codebase scanning.
+
+1. Read `.astra-cache/context.md` for stack, structure, and patterns.
+2. Check `docs/solutions/` for documented patterns and decisions.
+3. If DESIGN.md exists, read it. Reference D-R{n} elements in phase tasks. Ensure every D-R{n} is covered by at least one phase.
+4. If TECHNICAL.md exists, read it. Reference T-R{n} elements in phase tasks.
+5. **Only do targeted reads** for details not in the cache — e.g., read 1 specific test file to understand the test pattern.
 
 ## Plan Creation
 

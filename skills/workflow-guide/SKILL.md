@@ -128,14 +128,10 @@ Forge chains spec → design → plan → architect → implement → review aut
 ## Scenario D: Automated End-to-End Feature (Forge)
 
 1. **Run forge** — `/astra:forge "add notifications system"`
-   - PM agent interviews you, produces SPEC.md with numbered requirements (R1, R2...) and acceptance criteria
-   - You review and approve the spec
-   - Designer agent explores the codebase, produces DESIGN.md mapping UI requirements to design elements (D-R{n})
-   - You review and approve the UI/UX design
-   - Planner agent produces PLAN.md with full traceability (R{n} → D-R{n} → Phase tasks)
-   - You review and approve the plan
-   - Architect agent produces TECHNICAL.md with API contracts, data models, and ADRs (T-R{n})
-   - You review and approve the technical design
+   - Codebase scanned once → cached for all agents (no redundant exploration)
+   - PM agent produces SPEC.md → auto-proceeds (say "hold" to review)
+   - **Designer + Planner run in parallel** → DESIGN.md + PLAN.md concurrently → auto-proceeds
+   - Architect agent produces TECHNICAL.md → auto-proceeds
    - Implementer executes phase by phase with reviewer checking each phase
    - Final review validates all acceptance criteria are met
    - PRODUCT.md is updated with the new feature, artifacts are archived

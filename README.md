@@ -135,6 +135,7 @@ Rules reference real files from *your* codebase, not generic advice. Only create
 | `docs/plans/*.md` | Auto-archived by `/astra:spec` and `/astra:forge` | Optional — previous feature plans |
 | `docs/solutions/*.md` | `/astra:compound` | Optional — project knowledge base |
 | `docs/.agent-memory/*.md` | Agents (auto) | **No** — personal learnings, add to `.gitignore` |
+| `.astra-cache/` | `/astra:forge` (auto) | **No** — temporary, auto-deleted after forge completes |
 
 **You're ready to build.**
 
@@ -175,20 +176,29 @@ Not every task needs the full workflow. Match the commands to the size of the ta
 ```
 /astra:forge "user auth with Google and GitHub OAuth"
 /astra:forge "add a notifications system"
+/astra:forge "add dark mode" --lite
+/astra:forge "payment integration" --interactive
 ```
 
-The fully automated pipeline. Give it a feature description and it orchestrates the entire flow:
+The fully automated pipeline with **built-in speed optimizations**:
 
-1. **PM agent** interviews you → produces `SPEC.md` with numbered requirements → you approve
-2. **Designer agent** explores your codebase → produces `DESIGN.md` with UI/UX specs → you approve
-3. **Planner agent** creates phased `PLAN.md` with full traceability → you approve
-4. **Architect agent** explores your codebase → produces `TECHNICAL.md` with API contracts, data models, ADRs → you approve
+1. **Codebase scan** — one scan cached for all agents (no redundant exploration)
+2. **PM agent** → `SPEC.md` with numbered requirements → auto-proceeds
+3. **Designer + Planner run in parallel** → `DESIGN.md` + `PLAN.md` concurrently → auto-proceeds
+4. **Architect agent** → `TECHNICAL.md` with API contracts, data models, ADRs → auto-proceeds
 5. **Implementer** builds phase by phase with **reviewer** checking each phase
-6. Final review validates all acceptance criteria → `PRODUCT.md` updated → artifacts archived
+6. Final review → `PRODUCT.md` updated → artifacts archived
 
-Every requirement is traced through every stage: R1 → D-R1 → Phase 1 Task 2 → Test. Nothing falls through the cracks.
+**Speed modes:**
+| Mode | When | Pipeline |
+|---|---|---|
+| **Full** (default for complex features) | 4+ requirements or full-stack | PM → Designer ‖ Planner → Architect → Implement → Review |
+| **Lite** (auto for simple features) | ≤3 requirements, single type | PM → Planner → Implement → Review |
+| **`--interactive`** | When you want manual approval gates | Same pipeline, but pauses for "approve" at each stage |
 
-`PRODUCT.md` is a living document that tracks your product's current state — features, design system, API surface. On subsequent forge runs, agents read it to build incrementally on what exists.
+By default, stages auto-proceed after showing a summary. Say **"hold"** at any gate to review in detail.
+
+Every requirement is traced end-to-end: R1 → D-R1/T-R1 → Phase → Test. `PRODUCT.md` tracks your product state across forge runs.
 
 ---
 

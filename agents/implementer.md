@@ -22,7 +22,7 @@ Review your agent memory for patterns from previous implementations. Check if yo
 
 2. **Read UI/UX design.** If DESIGN.md exists, read it for component specs, design tokens, and layout requirements. Reference D-R{n} elements when implementing frontend tasks.
 
-3. **Search before writing.** Before creating any new code, search the codebase for existing patterns, utilities, or components to reuse. Check `docs/solutions/` for documented patterns or past decisions relevant to the current task.
+3. **Read context cache.** If `.astra-cache/context.md` exists, read it for project structure, patterns, and conventions. Then do targeted searches for specifics not in the cache. Check `docs/solutions/` for documented patterns.
 
 4. **Verify at every step.** After each meaningful change, run the relevant tests, linter, and type-checker.
 

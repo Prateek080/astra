@@ -32,17 +32,15 @@ Read the project's CLAUDE.md for conventions — naming, file structure, formatt
 
 Check `docs/solutions/` for architectural decisions or patterns relevant to this feature.
 
-## Exploration (CRITICAL — must understand existing patterns before designing)
+## Exploration
 
-1. **API patterns:** Identify existing route files, controller structure, middleware chain, response envelope format, and error response shape. Note REST vs GraphQL, versioning approach, and auth mechanism.
+**If `.astra-cache/context.md` exists, read it FIRST.** It contains a pre-scanned summary: API patterns, data layer, ORM, auth, error handling, test infrastructure. Use this instead of scanning the codebase yourself.
 
-2. **Data layer:** Identify ORM/database (Prisma schema, models directory, migration files), naming conventions (singular vs plural tables, snake_case vs camelCase columns), and relationship patterns.
-
-3. **Service layer:** Identify business logic organization — service classes, utility functions, transaction patterns, and event/queue systems.
-
-4. **Error handling:** Identify how errors propagate through the stack — custom error classes, error middleware, logging approach, and monitoring.
-
-5. **Reference specific files found** — "follow the pattern in `src/api/routes/users.ts`" is actionable; "follow existing patterns" is not.
+**Only do targeted exploration** for details not in the cache:
+1. Read 1-2 specific route/controller files to understand exact API patterns
+2. Read the database schema file for exact model definitions
+3. Read error handling middleware for the exact error envelope
+4. Reference specific files — "follow `src/api/routes/users.ts`" is actionable; "follow existing patterns" is not
 
 ## Design Process
 
