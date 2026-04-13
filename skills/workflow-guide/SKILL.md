@@ -129,7 +129,7 @@ Forge chains spec → design → plan → architect → implement → review aut
 
 1. **Run forge** — `/astra:forge "add notifications system"`
    - Codebase scanned once → cached for all agents (no redundant exploration)
-   - PM agent produces SPEC.md → auto-proceeds (say "hold" to review)
+   - PM agent produces SPEC.md → validates and proceeds automatically
    - **Designer + Planner run in parallel** → DESIGN.md + PLAN.md concurrently → auto-proceeds
    - Architect agent produces TECHNICAL.md → auto-proceeds
    - Implementer executes phase by phase with reviewer checking each phase

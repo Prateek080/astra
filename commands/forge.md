@@ -1,5 +1,5 @@
 ---
-description: "Automated pipeline: task → spec → design → plan → architect → code. Fast mode with parallel stages and auto-approve."
+description: "Automated pipeline: task → spec → design → plan → architect → code. Fully autonomous with parallel stages — only stops on failures."
 argument-hint: "[feature description] [--lite] [--interactive]"
 ---
 
@@ -11,11 +11,11 @@ You are orchestrating a complete development pipeline. You handle ALL agent comm
 
 **Speed optimizations active by default:**
 - **Codebase scan cache** — one scan in Step 0, all agents read `.astra-cache/context.md`
-- **Parallel stages** — Designer + Planner run concurrently after spec approval
-- **Auto-approve** — stages proceed after showing summary unless user says "hold" or "wait"
+- **Parallel stages** — Designer + Planner run concurrently
+- **Zero-stop** — stages validate internally and proceed automatically. Only stops on failures (two-strike rule) or blockers.
 - **Lite mode** — auto-detected for simple features (≤3 requirements, single type)
 
-Use `--interactive` to force manual approval at every gate. Use `--lite` to force lite mode.
+Use `--interactive` to add manual approval gates between stages. Use `--lite` to force lite mode.
 
 ---
 
@@ -120,15 +120,11 @@ Scan for all `### R{n}` patterns → build requirement ID list.
 - **Full mode** if: 4+ requirements OR full-stack OR `--interactive` flag
 - User can always override: "Detected [N] requirements ([type]). Running in [lite/full] mode."
 
-### 1e. Review gate
+### 1e. Progress update
 
-Present summary: feature name, executive summary, requirement count + list, detected mode (lite/full).
+Print one-line summary: "✓ Spec: [feature name] — [N] requirements, [lite/full] mode." Proceed immediately.
 
-**Auto-approve (default):** "Spec looks good — proceeding to [design+planning / planning]. Say **'hold'** to review in detail or provide feedback."
-
-**Interactive mode (`--interactive`):** "Does this spec look right? Reply 'approve' to proceed or provide feedback."
-
-If user says "hold" or provides feedback: revise via PM agent, re-validate, re-present. Repeat until approved.
+**Interactive mode (`--interactive`):** Pause and present full summary. "Does this spec look right? Reply 'approve' to proceed or provide feedback." Wait for approval.
 
 ---
 
@@ -160,16 +156,11 @@ Verify: `## Traceability Matrix` exists, component specs or user journeys exist,
 
 Verify: `# Plan:` heading, `## Goal`, `## Context`, at least one `## Phase` with `**Tasks:**` and `**Test gate:**`, `## Files Summary`. If gaps, send back to planner once.
 
-### 2c. Review gate
+### 2c. Progress update
 
-Present combined summary:
-- **Design** (full mode): key UI decisions, D-R{n} coverage
-- **Plan**: phase count + names, requirement-to-phase mapping
-- Mode indicator: "[Full mode: design + plan] / [Lite mode: plan only]"
+Print one-line summary: "✓ [Design + Plan / Plan]: [N] phases, [parallel/sequential]." Proceed immediately.
 
-**Auto-approve:** "Design and plan look good — proceeding to [technical design / implementation]. Say **'hold'** to review."
-
-**Interactive:** "Approve to proceed or provide feedback."
+**Interactive mode:** Pause with full design + plan summary. Wait for approval.
 
 ---
 
@@ -185,13 +176,11 @@ Present combined summary:
 
 Write output. Verify: `## Traceability Matrix`, T-R{n} prefixes, API schemas, data model fields. Cross-validate: every R{n} has either D-R{n} or T-R{n} coverage. If gaps, send back once.
 
-### 3c. Review gate
+### 3c. Progress update
 
-Present: ADR summary, API endpoints, data models, traceability matrix.
+Print one-line summary: "✓ Technical design: [N] endpoints, [N] models, [N] ADRs." Proceed immediately.
 
-**Auto-approve:** "Technical design looks good — proceeding to implementation. Say **'hold'** to review."
-
-**Interactive:** "Approve to proceed or provide feedback."
+**Interactive mode:** Pause with full ADR + API + data model summary. Wait for approval.
 
 ---
 
@@ -265,7 +254,7 @@ If non-obvious problems were solved: "Want me to run `/astra:compound` to docume
 
 2. **Agents read `.astra-cache/context.md`** — not independently scan the codebase. Instruct every agent to read the cache. This is the #1 speed optimization.
 
-3. **Auto-approve is default.** Show summary + proceed unless user says "hold"/"wait"/provides feedback. `--interactive` overrides this.
+3. **Zero-stop is default.** Validate internally, print one-line progress, proceed. Only stop on failures (two-strike) or blockers. `--interactive` adds manual approval gates.
 
 4. **Two-strike rule.** If any step fails twice, stop and ask the user.
 
