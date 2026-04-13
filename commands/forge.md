@@ -106,25 +106,21 @@ If SPEC.md exists: extract feature name → kebab-case slug → move SPEC.md, DE
 
 "Use the pm subagent: conduct product discovery for [$ARGUMENTS]. Read PRODUCT.md for context. Read `.astra-cache/context.md` for tech stack awareness. Produce spec with numbered requirements (R1, R2...), RICE prioritization, Given/When/Then acceptance criteria."
 
-### 1c. Write and validate SPEC.md
+### 1c. Write SPEC.md
 
-Write output to SPEC.md. Verify headings: `# Feature:`, `## Executive Summary`, `## Problem`, `## Scope`, `## Requirements` (with `### R` entries), `## Non-Functional Requirements`, `## Success Metrics`. If missing, send back once. If still failing, ask user.
+Write output to SPEC.md. Verify structure: `# Feature:`, `## Requirements` with `### R` entries, `## Non-Functional Requirements`. If missing headings, send back to PM once.
 
-### 1d. Extract requirements and detect complexity
+### 1d. Detect complexity
 
-Scan for all `### R{n}` patterns → build requirement ID list.
+Scan `### R{n}` patterns → build ID list. Count frontend vs backend vs full-stack.
+- **Lite mode:** ≤3 requirements AND single type (frontend-only OR backend-only) AND no `--interactive` flag
+- **Full mode:** 4+ requirements OR full-stack OR `--interactive` flag
 
-**Complexity detection:**
-- Count requirements. Count which are frontend vs backend vs full-stack.
-- **Lite mode** if: ≤3 requirements AND single type (frontend-only OR backend-only) AND `--lite` flag or no `--interactive` flag
-- **Full mode** if: 4+ requirements OR full-stack OR `--interactive` flag
-- User can always override: "Detected [N] requirements ([type]). Running in [lite/full] mode."
+### 1e. Stage gate — SPEC eval
 
-### 1e. Progress update
+Run **SPEC Eval** from stage-gate skill (S1–S5). Pass/warn/fail logic applies.
 
-Print one-line summary: "✓ Spec: [feature name] — [N] requirements, [lite/full] mode." Proceed immediately.
-
-**Interactive mode (`--interactive`):** Pause and present full summary. "Does this spec look right? Reply 'approve' to proceed or provide feedback." Wait for approval.
+**Interactive mode:** Pause with full summary after eval passes. Wait for approval.
 
 ---
 
@@ -148,19 +144,15 @@ Skip Designer entirely. Launch Planner subagent only:
 
 Write PLAN.md.
 
-### 2a. Validate DESIGN.md (full mode only)
+### 2a. Stage gate — DESIGN eval (full mode only)
 
-Verify: `## Traceability Matrix` exists, component specs or user journeys exist, D-R{n} prefixes used. Cross-validate: every frontend R{n} has a D-R{n}. If gaps, send back to designer once.
+Run **DESIGN Eval** from stage-gate skill (D1–D5). Pass/warn/fail logic applies.
 
-### 2b. Validate PLAN.md
+### 2b. Stage gate — PLAN eval
 
-Verify: `# Plan:` heading, `## Goal`, `## Context`, at least one `## Phase` with `**Tasks:**` and `**Test gate:**`, `## Files Summary`. If gaps, send back to planner once.
+Run **PLAN Eval** from stage-gate skill (P1–P4). Pass/warn/fail logic applies.
 
-### 2c. Progress update
-
-Print one-line summary: "✓ [Design + Plan / Plan]: [N] phases, [parallel/sequential]." Proceed immediately.
-
-**Interactive mode:** Pause with full design + plan summary. Wait for approval.
+**Interactive mode:** Pause with full design + plan summary after evals pass. Wait for approval.
 
 ---
 
@@ -172,15 +164,11 @@ Print one-line summary: "✓ [Design + Plan / Plan]: [N] phases, [parallel/seque
 
 "Use the architect subagent: create technical design from SPEC.md, DESIGN.md, PLAN.md. Read `.astra-cache/context.md` for existing patterns (DO NOT re-scan — use the cache). Produce TECHNICAL.md with T-R{n} traceability, ADRs, API contracts, data models, error handling."
 
-### 3b. Write and validate TECHNICAL.md
+### 3b. Stage gate — TECHNICAL eval
 
-Write output. Verify: `## Traceability Matrix`, T-R{n} prefixes, API schemas, data model fields. Cross-validate: every R{n} has either D-R{n} or T-R{n} coverage. If gaps, send back once.
+Write output to TECHNICAL.md. Run **TECHNICAL Eval** from stage-gate skill (T1–T5). Pass/warn/fail logic applies.
 
-### 3c. Progress update
-
-Print one-line summary: "✓ Technical design: [N] endpoints, [N] models, [N] ADRs." Proceed immediately.
-
-**Interactive mode:** Pause with full ADR + API + data model summary. Wait for approval.
+**Interactive mode:** Pause with full ADR + API + data model summary after eval passes. Wait for approval.
 
 ---
 
@@ -196,11 +184,9 @@ Read PLAN.md. Skip phases marked `**Status: complete**`. Group parallel phases i
 
 Follow `commands/implement.md` for phase execution — sequential phases, parallel batches, verification gates, status updates.
 
-### 4c. Per-phase mini-review
+### 4c. Stage gate — PHASE eval
 
-After each phase's test gate passes, spawn reviewer: "Review Phase {n} changes. Critical issues only — security, correctness, data integrity. Skip style."
-
-Critical findings → fix + re-test. Warnings → note for final review.
+After each phase, run **PHASE Eval** from stage-gate skill (I1–I4). Pass/warn/fail logic applies. Critical findings → fix + re-test.
 
 ### 4d. Between phases
 
