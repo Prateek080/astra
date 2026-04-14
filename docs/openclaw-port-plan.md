@@ -1,8 +1,10 @@
 # Astra → OpenClaw Port: Exhaustive Change List
 
 **Status:** Planning only — not implemented
-**Date:** 2026-04-13
+**Date:** 2026-04-14 (updated with Astra v2 SDK orchestrator mappings)
 **Context:** Port Astra's development lifecycle agents from Claude Code to OpenClaw, enabling multi-model orchestration where each agent can use the best model for its role. Reference architecture: JobCopilot cron-driven 3-phase pipeline diagram.
+
+**Update (v2):** Astra now has a Python SDK orchestrator (`orchestrator/`) with deterministic stage-gate checks, hooks, MCP integrations, Git/Slack tools, scheduled tasks, path-scoped rules, and agent memory. Most of this Python code ports directly to OpenClaw — see Section 18.
 
 ---
 
@@ -30,20 +32,24 @@
 
 ## 1. Architecture Differences
 
-| Aspect | Claude Code (current) | OpenClaw (target) |
-|---|---|---|
-| Orchestrator | forge.md (single session, synchronous) | Dexter agent + HEARTBEAT.md (cron-driven, async) |
-| Agent isolation | Sub-agents share parent context | Each agent is fully isolated (`sessions_spawn`) |
-| Model | All agents use Claude (inherit) | Each agent can use a different model |
-| Tool system | Read, Write, Edit, Bash, Grep, Glob | exec, browser, node tools, custom tools |
-| Plugin format | `.claude-plugin/plugin.json` | `openclaw.plugin.json` |
-| Skill format | `skills/*/SKILL.md` (YAML frontmatter + markdown) | `skills/*/SKILL.md` (same format) |
-| Agent format | `agents/*.md` (YAML frontmatter: tools, model, color, memory, readonly) | Workspace config + AGENTS.md + sub-agent sessions |
-| Command format | `commands/*.md` (YAML frontmatter: description, argument-hint) | Workspace-level files, cron triggers, or skills |
-| Context passing | Shared filesystem (SPEC.md, DESIGN.md, etc.) | Python scripts as mediators between isolated agents |
-| Scheduling | User-triggered (`/astra:forge "feature"`) | Cron-driven (HEARTBEAT.md checks + spawns) + manual trigger |
-| Reporting | None (user reads terminal) | Telegram/Discord progress reports |
-| Codebase context | `.astra-cache/context.md` (flat file, rebuilt each run) | Graphify `GRAPH_REPORT.md` (persistent graph, incremental updates) |
+| Aspect | Claude Code v1 (markdown) | Claude Code v2 (SDK) | OpenClaw (target) |
+|---|---|---|---|
+| Orchestrator | forge.md (LLM-interpreted) | `orchestrator/pipeline.py` (Python async) | Dexter + HEARTBEAT.md (cron) |
+| Agent isolation | Sub-agents share parent context | `query()` per stage (fresh session) | `sessions_spawn` (fully isolated) |
+| Model | All Claude (inherit) | All Claude (inherit) | Per-agent model routing |
+| Tool system | Read, Write, Edit, Bash, Grep, Glob | Same + SDK hooks for enforcement | exec, browser, node, custom |
+| Plugin format | `.claude-plugin/plugin.json` | Same (SDK loads it) | `openclaw.plugin.json` |
+| Skill format | `skills/*/SKILL.md` | Same (shared) | Same (shared) |
+| Agent format | `agents/*.md` (YAML frontmatter) | Same (parsed by `config.py`) | AGENTS.md + sub-agent configs |
+| Stage-gate checks | LLM-interpreted (stage-gate skill) | Python functions (checks/*.py) | Same Python functions |
+| Hooks | None | SDK callbacks + hooks.json | OpenClaw hook system |
+| Permissions | Manual approval popups | `permissions.py` profiles + hooks | Per-agent workspace config |
+| Context passing | Shared filesystem | Same + `PipelineState` JSON | Python mediator scripts |
+| Scheduling | User-triggered | `scheduler.py` + crontab | HEARTBEAT.md + cron engine |
+| Reporting | None | Slack webhook (tools/slack_tools.py) | Telegram/Discord |
+| Git automation | Manual | Git tools (auto-branch, commit, PR) | Same Python tools |
+| Agent memory | `memory: user` (agent frontmatter) | `memory.py` (file-based) | File-based (same) |
+| Codebase context | `.astra-cache/context.md` | Same | Graphify GRAPH_REPORT.md |
 
 ---
 
@@ -499,7 +505,7 @@ Besides cron, support manual trigger:
 
 ## 12. Reporting Layer
 
-**New layer.** Astra has no reporting. OpenClaw version reports to Telegram/Discord.
+**UPDATE (v2):** Astra now has `orchestrator/tools/slack_tools.py` with `notify_pipeline_event()`. For OpenClaw, swap Slack webhook for Telegram Bot API — same function signature, different HTTP endpoint.
 
 ### Report types
 
@@ -520,17 +526,27 @@ Besides cron, support manual trigger:
 
 ---
 
-## 13. Stage-Gate Evals in OpenClaw
+## 13. Stage-Gate Checks in OpenClaw
 
-The `stage-gate/SKILL.md` methodology ports directly. The execution changes.
+**UPDATE (v2): All checks are now implemented as Python functions in `orchestrator/checks/`.** These port directly to OpenClaw with zero changes — they're pure Python with no SDK dependency.
 
-### Current (Claude Code)
+### Current (Astra v2)
 
-Forge reads the skill, runs checks inline in the same session, proceeds or stops.
+Python check functions in `orchestrator/checks/`:
+- `spec_checks.py` — S1-S5 (regex, counting, keyword match)
+- `design_checks.py` — D1-D5 (cross-reference, raw value scan, state count)
+- `plan_checks.py` — P1-P4 (coverage, test gates, task count, dependency order)
+- `tech_checks.py` — T1-T5 (coverage, API completeness, models, error codes)
+- `phase_checks.py` — I1-I4 (subprocess: tests, lint, types)
 
 ### Target (OpenClaw)
 
-Dexter spawns eval as a Python script (not an LLM call) where possible:
+Copy `orchestrator/checks/` as-is. Call from HEARTBEAT.md or Dexter via `exec` tool:
+```bash
+python3 -m orchestrator.checks.spec_checks --spec SPEC.md --feature "notifications"
+```
+
+These are the same checks listed below (kept for reference):
 
 | Eval | Can be scripted? | Approach |
 |---|---|---|
@@ -730,3 +746,96 @@ Suggested phased implementation:
 9. **Backward compatibility** — Should the OpenClaw version maintain the same artifact format as Claude Code version so you can switch between them on the same project?
 
 10. **ClawHub publishing** — Should Astra be published as a ClawHub skill/plugin for the community?
+
+---
+
+## 18. Astra v2 SDK → OpenClaw Mapping (NEW)
+
+Astra v2 introduced a Python SDK orchestrator (`orchestrator/`) with hooks, checks, tools, scheduled tasks, and agent memory. This section maps every v2 component to its OpenClaw equivalent.
+
+### What Ports Directly (zero changes)
+
+| Astra v2 Component | File(s) | OpenClaw Usage |
+|---|---|---|
+| All 11 skills | `skills/*/SKILL.md` | Copy to OpenClaw skills directory |
+| Spec checks (S1-S5) | `orchestrator/checks/spec_checks.py` | Call via `exec` or import |
+| Design checks (D1-D5) | `orchestrator/checks/design_checks.py` | Call via `exec` or import |
+| Plan checks (P1-P4) | `orchestrator/checks/plan_checks.py` | Call via `exec` or import |
+| Tech checks (T1-T5) | `orchestrator/checks/tech_checks.py` | Call via `exec` or import |
+| Phase checks (I1-I4) | `orchestrator/checks/phase_checks.py` | Call via `exec` or import |
+| Check base classes | `orchestrator/checks/base.py` | Import directly |
+| Git tools | `orchestrator/tools/git_tools.py` | Call directly (pure asyncio+subprocess) |
+| Agent memory | `orchestrator/memory.py` | Import directly (pure file I/O) |
+| Pipeline state | `orchestrator/state.py` | Import directly (Pydantic model) |
+| Config loader | `orchestrator/config.py` | Adapt: change ASTRA_PLUGIN_DIR to OpenClaw paths |
+| Path-scoped rules | `rules/*.md` | Copy to OpenClaw workspace rules |
+
+### What Needs Adaptation
+
+| Astra v2 Component | File(s) | OpenClaw Adaptation |
+|---|---|---|
+| Pipeline orchestrator | `orchestrator/pipeline.py` | Replace `query()` calls with `sessions_spawn`. Replace `asyncio.gather()` with parallel session tracking. Replace `ClaudeAgentOptions` with OpenClaw workspace config. |
+| Stage base class | `orchestrator/stages/base.py` | Replace `query()` + `ClaudeAgentOptions` with OpenClaw sub-agent spawning pattern. Keep `build_prompt()` logic. |
+| Stage definitions | `orchestrator/stages/*.py` | Keep `build_prompt()` methods. Replace `run()` with OpenClaw `sessions_spawn` + output capture. |
+| SDK hooks | `orchestrator/hooks.py` | Replace SDK callback pattern with OpenClaw hook system. `enforce_readonly` → OpenClaw tool restrictions per agent. `audit_trail` → OpenClaw PostToolUse hook. |
+| Permissions | `orchestrator/permissions.py` | Map `PermissionProfile` to OpenClaw per-agent workspace tool configs. |
+| Plugin hooks | `hooks/hooks.json` | Replace with OpenClaw hook format (check OpenClaw docs for exact schema). |
+| Slack tools | `orchestrator/tools/slack_tools.py` | Swap webhook URL for Telegram Bot API. Function signature stays the same. |
+| MCP config | `orchestrator/mcp.py` | Replace `ClaudeAgentOptions.mcp_servers` with OpenClaw tool registration. |
+| Scheduler | `orchestrator/scheduler.py` | Replace crontab management with OpenClaw cron engine (HEARTBEAT.md). |
+| CLI | `orchestrator/__main__.py` | Replace with OpenClaw command/trigger (Dexter message or cron). |
+
+### Key Insight: Effort Reduction from v2
+
+Before v2, porting to OpenClaw required writing all check logic, git tools, state management, and reporting from scratch. Now:
+
+| Component | Before v2 (estimated) | After v2 (port effort) |
+|---|---|---|
+| Stage-gate checks | Write from scratch (~5 days) | Copy as-is (0 days) |
+| Git automation | Write from scratch (~2 days) | Copy as-is (0 days) |
+| Agent memory | Write from scratch (~1 day) | Copy as-is (0 days) |
+| Pipeline state | Write from scratch (~2 days) | Copy, adapt spawn calls (~1 day) |
+| Reporting | Write from scratch (~2 days) | Swap Slack→Telegram (~0.5 days) |
+| Orchestration | Write HEARTBEAT.md (~3 days) | Adapt pipeline.py → HEARTBEAT (~2 days) |
+| **Total** | **~15 days** | **~3.5 days** |
+
+The v2 Python code is the shared foundation. Only the SDK-specific integration layer (how agents are spawned, how permissions are enforced) needs to be rewritten for OpenClaw.
+
+### Updated Migration Order (accounting for v2)
+
+#### Phase 1: Copy shared code (0.5 days)
+1. Copy `skills/` → OpenClaw skills directory
+2. Copy `orchestrator/checks/` → OpenClaw scripts
+3. Copy `orchestrator/tools/git_tools.py` → OpenClaw scripts
+4. Copy `orchestrator/memory.py` → OpenClaw scripts
+5. Copy `orchestrator/state.py` → OpenClaw scripts
+6. Copy `rules/` → OpenClaw workspace rules
+7. Verify imports work outside the SDK
+
+#### Phase 2: Adapt orchestration (2 days)
+8. Create AGENTS.md from `agents/*.md` (convert YAML frontmatter to OpenClaw format)
+9. Create HEARTBEAT.md adapting `pipeline.py` logic to OpenClaw's cron pattern
+10. Adapt `stages/*.py` — keep prompts, replace `query()` with `sessions_spawn`
+11. Wire checks into HEARTBEAT between-phase transitions
+
+#### Phase 3: Wire tools + reporting (1 day)
+12. Swap `slack_tools.py` webhook → Telegram Bot API
+13. Wire `git_tools.py` into HEARTBEAT wrap-up phase
+14. Configure Aider for coder agent
+
+#### Phase 4: Test + polish (1-2 days)
+15. Test full pipeline on a real project
+16. Performance benchmark
+17. Update README
+
+### Updated Open Questions (v2 resolves several)
+
+| # | Original Question | Status |
+|---|---|---|
+| 1 | Agent memory approach | **Resolved** — `memory.py` uses file-based approach, works on any platform |
+| 6 | Parallel sub-agents | **Partially resolved** — `pipeline.py` uses `asyncio.gather()`, OpenClaw needs equivalent |
+| 7 | Cost tracking | **Partially resolved** — `audit.jsonl` logs all tool calls, needs token counting added |
+| 8 | Artifact format | **Resolved** — Keep Astra's free-form markdown artifacts (used by v2 checks) |
+| 9 | Backward compatibility | **Resolved** — Both Claude Code paths (markdown + SDK) share artifacts with OpenClaw |
+
+Remaining open: questions 2 (session management), 3 (model availability), 4 (Aider compatibility), 5 (Graphify integration), 10 (ClawHub publishing).
