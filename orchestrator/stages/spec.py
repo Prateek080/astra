@@ -43,6 +43,11 @@ class SpecStage(Stage):
         else:
             parts.append("No PRODUCT.md found — this is the first feature.")
 
+        # Add agent memory from past sessions
+        memory = self._get_memory_section(config)
+        if memory:
+            parts.append(memory)
+
         parts.append("")
         parts.append("Return ONLY the complete SPEC.md content. No explanations outside the spec.")
 

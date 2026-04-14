@@ -67,10 +67,13 @@ class Stage(ABC):
         Returns a dict that can be unpacked into ClaudeAgentOptions.
         We return a dict because the actual SDK import happens at call time.
         """
+        from orchestrator.hooks import build_hooks_config
+
         opts: dict[str, Any] = {
             "allowed_tools": self.get_allowed_tools(),
             "permission_mode": self.get_permission_mode(),
             "cwd": str(config.project_dir),
+            "hooks": build_hooks_config(readonly=self.readonly),
         }
 
         # Load Astra plugin for skills and agents
@@ -146,3 +149,12 @@ class Stage(ABC):
         if config.context_cache_path.is_file():
             return config.context_cache_path.read_text(encoding="utf-8")
         return ""
+
+    def _get_memory_section(self, config: AstraConfig) -> str:
+        """Get agent memory for inclusion in prompts."""
+        # Check for memory injected by pipeline (parallel-safe)
+        if hasattr(self, "_memory_context") and self._memory_context:
+            return self._memory_context
+
+        from orchestrator.memory import get_memory_prompt_section
+        return get_memory_prompt_section(config.project_dir, self.agent_name)

@@ -162,7 +162,9 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, Any] | None, str]:
 
     try:
         meta = yaml.safe_load(parts[1])
-    except yaml.YAMLError:
+    except yaml.YAMLError as e:
+        import warnings
+        warnings.warn(f"Failed to parse YAML frontmatter: {e}", stacklevel=2)
         return None, text
 
     body = parts[2].strip()

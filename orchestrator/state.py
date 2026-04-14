@@ -46,7 +46,7 @@ class PipelineState(BaseModel):
     requirement_ids: list[str] = Field(default_factory=list)
 
     def init_stages(self, mode: str) -> None:
-        """Initialize stage records based on mode."""
+        """Initialize stage records based on mode. Preserves existing completed stages."""
         self.mode = mode
         stage_names = ["scan", "spec"]
         if mode == "full":
@@ -57,6 +57,15 @@ class PipelineState(BaseModel):
         for name in stage_names:
             if name not in self.stages:
                 self.stages[name] = StageRecord(name=name)
+            # Don't overwrite completed/in-progress stages on resume
+
+        # Remove stages not in this mode (e.g., design/architect in lite mode)
+        valid_names = set(stage_names)
+        for name in list(self.stages.keys()):
+            if name not in valid_names:
+                record = self.stages[name]
+                if record.status == StageStatus.PENDING:
+                    record.status = StageStatus.SKIPPED
 
     def stage_complete(self, name: str) -> bool:
         record = self.stages.get(name)

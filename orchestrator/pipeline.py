@@ -4,28 +4,34 @@ from __future__ import annotations
 
 import asyncio
 import re
+from datetime import datetime, timezone
 
 from rich.console import Console
 
-from orchestrator.checks.base import CheckStatus
 from orchestrator.checks.design_checks import run_design_checks
 from orchestrator.checks.phase_checks import run_phase_checks
 from orchestrator.checks.plan_checks import run_plan_checks
 from orchestrator.checks.spec_checks import run_spec_checks
 from orchestrator.checks.tech_checks import run_tech_checks
 from orchestrator.config import AstraConfig
+from orchestrator.memory import get_memory_prompt_section, save_agent_memory
 from orchestrator.stages.architect import ArchitectStage
-from orchestrator.stages.base import StageResult
+from orchestrator.stages.base import Stage, StageResult
 from orchestrator.stages.design import DesignStage
 from orchestrator.stages.implement import ImplementStage
 from orchestrator.stages.plan import PlanStage
 from orchestrator.stages.review import ReviewStage
 from orchestrator.stages.spec import SpecStage
 from orchestrator.state import PipelineState
+from orchestrator.tools.git_tools import commit_phase, create_feature_branch, create_pr
+from orchestrator.tools.slack_tools import notify_pipeline_event
 
 console = Console()
 
 MAX_RETRIES = 2
+
+# Lock for serializing state mutations during parallel stages
+_state_lock = asyncio.Lock()
 
 
 async def _run_codebase_scan(config: AstraConfig, state: PipelineState) -> None:
@@ -79,7 +85,6 @@ def _detect_mode(spec_text: str, force_lite: bool) -> str:
     req_pattern = re.compile(r"^###\s+R\d+:", re.MULTILINE)
     req_count = len(req_pattern.findall(spec_text))
 
-    # Check if mixed frontend+backend
     has_frontend = bool(re.search(r"UI|component|page|frontend|button|form|display", spec_text, re.IGNORECASE))
     has_backend = bool(re.search(r"API|endpoint|database|model|migration|backend", spec_text, re.IGNORECASE))
     is_mixed = has_frontend and has_backend
@@ -89,15 +94,35 @@ def _detect_mode(spec_text: str, force_lite: bool) -> str:
     return "full"
 
 
+def _slack(config: AstraConfig, event: str, stage: str, details: str = "") -> None:
+    """Send Slack notification (non-blocking, best-effort)."""
+    notify_pipeline_event(config.slack_webhook_url, event, stage, details, config.dry_run)
+
+
 async def _run_stage_with_retry(
-    stage,
+    stage: Stage,
     state: PipelineState,
     config: AstraConfig,
     stage_name: str,
+    lock: asyncio.Lock | None = None,
 ) -> StageResult:
-    """Run a stage with two-strike retry logic."""
-    state.advance_to(stage_name)
-    state.save(config.state_path)
+    """Run a stage with two-strike retry logic. Thread-safe state updates."""
+
+    async def _update_state(fn):
+        if lock:
+            async with lock:
+                fn()
+                state.save(config.state_path)
+        else:
+            fn()
+            state.save(config.state_path)
+
+    await _update_state(lambda: state.advance_to(stage_name))
+
+    # Inject agent memory into the stage prompt context
+    memory_section = get_memory_prompt_section(config.project_dir, stage.agent_name)
+    if memory_section:
+        stage._memory_context = memory_section  # Stage can access this in build_prompt
 
     result = await stage.run(state, config)
 
@@ -108,13 +133,13 @@ async def _run_stage_with_retry(
             result = await stage.run(state, config)
 
         if not result.success:
-            state.mark_failed(stage_name, result.error or "Unknown error")
-            state.save(config.state_path)
+            await _update_state(lambda: state.mark_failed(stage_name, result.error or "Unknown error"))
             console.print(f"  [red]✗ {stage_name} failed after {MAX_RETRIES} attempts: {result.error}[/]")
+            _slack(config, "fail", stage_name, result.error or "")
             return result
 
-    state.mark_complete(stage_name, result.artifact_path, result.session_id)
-    state.save(config.state_path)
+    # Don't mark complete yet — gate will validate first
+    # Store result for the caller to decide
     return result
 
 
@@ -125,9 +150,19 @@ def _run_gate(gate_result, state, config, stage_name) -> bool:
     state.save(config.state_path)
 
     if not gate_result.passed:
+        state.mark_failed(stage_name, f"Gate failed: {gate_result.overall.value}")
+        state.save(config.state_path)
         console.print(f"  [red]✗ {stage_name} gate failed[/]")
+        _slack(config, "fail", f"{stage_name} gate", "Check failed")
         return False
     return True
+
+
+def _mark_stage_done(state: PipelineState, config: AstraConfig, name: str, result: StageResult) -> None:
+    """Mark stage complete AFTER gate passes (fixes state ordering bug)."""
+    state.mark_complete(name, result.artifact_path, result.session_id)
+    state.save(config.state_path)
+    _slack(config, "pass", name)
 
 
 async def run_pipeline(
@@ -150,9 +185,14 @@ async def run_pipeline(
         console.print("  [yellow]Dry run mode[/]")
     console.print()
 
+    _slack(config, "start", "Pipeline", f"Feature: {feature}")
+
     # ── Step 0: Codebase scan ──────────────────────────────────
     if not state.stage_complete("scan"):
         await _run_codebase_scan(config, state)
+
+    # ── Git: create feature branch ─────────────────────────────
+    await create_feature_branch(feature, config.project_dir, config.dry_run)
 
     # ── Step 1: PM → SPEC.md ──────────────────────────────────
     if not state.stage_complete("spec"):
@@ -160,19 +200,20 @@ async def run_pipeline(
         if not result.success:
             return
 
-        # Detect mode from spec
+        # Detect mode from spec BEFORE marking complete
         spec_path = config.project_dir / "SPEC.md"
         if spec_path.is_file():
             mode = _detect_mode(spec_path.read_text(), config.lite)
             state.init_stages(mode)
-            state.mark_complete("spec", "SPEC.md", result.session_id)
-            state.save(config.state_path)
             console.print(f"  Mode: [bold]{mode}[/]")
 
-        # Spec gate
+        # Spec gate — MUST pass before marking complete
         gate = run_spec_checks(feature, config.project_dir / "SPEC.md")
         if not _run_gate(gate, state, config, "spec"):
             return
+
+        # Only now mark complete (after gate passes)
+        _mark_stage_done(state, config, "spec", result)
 
         if config.interactive:
             console.print("\n  [yellow]Interactive: Review SPEC.md. Press Enter to continue or Ctrl+C to stop.[/]")
@@ -180,40 +221,52 @@ async def run_pipeline(
 
     # ── Step 2: Design + Plan ──────────────────────────────────
     if state.mode == "full":
-        # Parallel: Designer + Planner
-        tasks = []
-        if not state.stage_complete("design"):
-            tasks.append(("design", _run_stage_with_retry(DesignStage(), state, config, "design")))
-        if not state.stage_complete("plan"):
-            tasks.append(("plan", _run_stage_with_retry(PlanStage(), state, config, "plan")))
+        # Parallel: Designer + Planner with state lock
+        parallel_results: dict[str, StageResult] = {}
+        tasks_to_run = []
 
-        if tasks:
+        if not state.stage_complete("design"):
+            tasks_to_run.append(("design", DesignStage()))
+        if not state.stage_complete("plan"):
+            tasks_to_run.append(("plan", PlanStage()))
+
+        if tasks_to_run:
             console.print("  [dim]Running Designer + Planner in parallel...[/]")
-            results = await asyncio.gather(*[t[1] for t in tasks], return_exceptions=True)
-            for (name, _), result in zip(tasks, results):
-                if isinstance(result, Exception):
-                    state.mark_failed(name, str(result))
-                    state.save(config.state_path)
-                    console.print(f"  [red]✗ {name} failed: {result}[/]")
+
+            async def _run_parallel(name: str, stage: Stage) -> tuple[str, StageResult]:
+                r = await _run_stage_with_retry(stage, state, config, name, lock=_state_lock)
+                return name, r
+
+            coros = [_run_parallel(name, stage) for name, stage in tasks_to_run]
+            results = await asyncio.gather(*coros, return_exceptions=True)
+
+            for item in results:
+                if isinstance(item, Exception):
+                    console.print(f"  [red]✗ Parallel stage failed: {item}[/]")
                     return
+                name, result = item
+                parallel_results[name] = result
                 if not result.success:
                     return
 
-        # Design gate
-        if state.mode == "full":
+        # Design gate (must pass before marking complete)
+        if "design" in parallel_results:
             dgate = run_design_checks(
                 config.project_dir / "SPEC.md",
                 config.project_dir / "DESIGN.md",
             )
             _run_gate(dgate, state, config, "design")
+            _mark_stage_done(state, config, "design", parallel_results["design"])
 
-        # Plan gate
-        pgate = run_plan_checks(
-            config.project_dir / "SPEC.md",
-            config.project_dir / "PLAN.md",
-        )
-        if not _run_gate(pgate, state, config, "plan"):
-            return
+        # Plan gate (must pass before marking complete)
+        if "plan" in parallel_results:
+            pgate = run_plan_checks(
+                config.project_dir / "SPEC.md",
+                config.project_dir / "PLAN.md",
+            )
+            if not _run_gate(pgate, state, config, "plan"):
+                return
+            _mark_stage_done(state, config, "plan", parallel_results["plan"])
 
         if config.interactive:
             console.print("\n  [yellow]Interactive: Review DESIGN.md + PLAN.md. Press Enter to continue.[/]")
@@ -231,6 +284,7 @@ async def run_pipeline(
             )
             if not _run_gate(pgate, state, config, "plan"):
                 return
+            _mark_stage_done(state, config, "plan", result)
 
     # ── Step 3: Architect → TECHNICAL.md ───────────────────────
     if state.mode == "full" and not state.stage_complete("architect"):
@@ -245,6 +299,7 @@ async def run_pipeline(
         )
         if not _run_gate(tgate, state, config, "architect"):
             return
+        _mark_stage_done(state, config, "architect", result)
 
         if config.interactive:
             console.print("\n  [yellow]Interactive: Review TECHNICAL.md. Press Enter to continue.[/]")
@@ -259,25 +314,44 @@ async def run_pipeline(
         # Phase gate
         phgate = await run_phase_checks(config.project_dir, config.project_dir / "SPEC.md")
         _run_gate(phgate, state, config, "implement")
+        _mark_stage_done(state, config, "implement", result)
+
+        # Git: commit implementation
+        await commit_phase("implementation", 4, config.project_dir, config.dry_run)
 
     # ── Step 5: Review ─────────────────────────────────────────
     if not state.stage_complete("review"):
         result = await _run_stage_with_retry(ReviewStage(), state, config, "review")
         if not result.success:
             return
-        state.mark_complete("review", session_id=result.session_id)
-        state.save(config.state_path)
-        console.print(f"  [green]✓[/] Review complete")
+        _mark_stage_done(state, config, "review", result)
+        console.print("  [green]✓[/] Review complete")
 
     # ── Step 6: Wrap-up ────────────────────────────────────────
     if not state.stage_complete("wrapup"):
-        state.mark_complete("wrapup")
-        state.completed_at = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
-        state.save(config.state_path)
+        # 6a. Archive artifacts to docs/
+        _archive_artifacts(config)
 
-        # Clean up cache (except state file for resume reference)
+        # 6b. Save agent memory from this run
+        for agent_name in ["pm", "designer", "planner", "architect", "implementer", "reviewer"]:
+            record = state.stages.get(agent_name)
+            if record and record.artifact_path:
+                save_agent_memory(
+                    config.project_dir,
+                    agent_name,
+                    f"Pipeline {state.pipeline_id}: processed '{feature}' ({state.mode} mode)",
+                )
+
+        # 6c. Git: create PR
+        pr_url = await create_pr(feature, config.project_dir / "SPEC.md", config.project_dir, config.dry_run)
+
+        # 6d. Clean up cache
         if config.context_cache_path.is_file():
             config.context_cache_path.unlink()
+
+        state.mark_complete("wrapup")
+        state.completed_at = datetime.now(timezone.utc).isoformat()
+        state.save(config.state_path)
 
         console.print()
         console.print("[bold green]Pipeline complete![/]")
@@ -288,5 +362,29 @@ async def run_pipeline(
             console.print(", DESIGN.md, PLAN.md, TECHNICAL.md")
         else:
             console.print(", PLAN.md")
+        if pr_url:
+            console.print(f"  PR: {pr_url}")
         console.print()
-        console.print("  Next: `astra-forge schedule` or `/astra:ship` to commit + PR")
+
+        _slack(config, "complete", "Pipeline", f"Feature: {feature}")
+
+
+def _archive_artifacts(config: AstraConfig) -> None:
+    """Archive completed artifacts to docs/ directories."""
+    import shutil
+
+    archive_map = {
+        "SPEC.md": "docs/specs",
+        "DESIGN.md": "docs/designs",
+        "PLAN.md": "docs/plans",
+        "TECHNICAL.md": "docs/technical",
+    }
+
+    for filename, dest_dir in archive_map.items():
+        src = config.project_dir / filename
+        if src.is_file():
+            dest = config.project_dir / dest_dir
+            dest.mkdir(parents=True, exist_ok=True)
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+            dest_file = dest / f"{src.stem}-{timestamp}{src.suffix}"
+            shutil.copy2(str(src), str(dest_file))
