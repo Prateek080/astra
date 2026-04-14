@@ -4,3 +4,14 @@ Thumbs.db
 *.swo
 *~
 node_modules/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+
+# Astra runtime
+.astra-cache/

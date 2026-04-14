@@ -303,6 +303,51 @@ if [ "$HAS_CURSOR" = true ]; then
   install_cursor
 fi
 
+# ─── Step 4: Install Python orchestrator (optional) ────────────────
+
+install_orchestrator() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "Python 3 not found. SDK orchestrator (astra-forge) will not be available."
+    warn "The markdown-based /astra:forge still works without Python."
+    return
+  fi
+
+  PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+
+  if ! python3 -c "import sys; exit(0 if sys.version_info >= (3, 10) else 1)" 2>/dev/null; then
+    warn "Python $PY_VERSION found, but 3.10+ required for the SDK orchestrator."
+    return
+  fi
+
+  info "Setting up Python orchestrator (astra-forge)..."
+
+  if command -v pipx >/dev/null 2>&1; then
+    pipx install "$ASTRA_DIR" --force --quiet 2>/dev/null && ok "Installed astra-forge via pipx" || {
+      # Fallback to pip if pipx fails
+      python3 -m pip install --user "$ASTRA_DIR" --quiet 2>/dev/null && ok "Installed astra-forge via pip" || \
+        warn "Could not install astra-forge. Install manually: pip install $ASTRA_DIR"
+    }
+  else
+    python3 -m pip install --user "$ASTRA_DIR" --quiet --break-system-packages 2>/dev/null && ok "Installed astra-forge via pip" || {
+      python3 -m pip install --user "$ASTRA_DIR" --quiet 2>/dev/null && ok "Installed astra-forge via pip" || \
+        warn "Could not install astra-forge. Install manually: pip install $ASTRA_DIR"
+    }
+  fi
+
+  # Check token configuration
+  if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+    info "Note: Set ANTHROPIC_API_KEY for the SDK orchestrator"
+  fi
+  if [ -z "${GITHUB_TOKEN:-}" ]; then
+    info "Note: Set GITHUB_TOKEN for GitHub MCP integration (optional)"
+  fi
+  if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+    info "Note: Set SLACK_WEBHOOK_URL for Slack notifications (optional)"
+  fi
+}
+
+install_orchestrator
+
 # ─── Done ───────────────────────────────────────────────────────────
 
 echo ""
@@ -325,7 +370,14 @@ if [ "$HAS_CURSOR" = true ]; then
   echo ""
 fi
 
+if command -v astra-forge >/dev/null 2>&1; then
+  echo -e "  ${BOLD}SDK Orchestrator:${RESET}"
+  echo "    astra-forge \"feature description\"    # Full autonomous pipeline"
+  echo "    astra-forge schedule list             # Manage scheduled tasks"
+  echo ""
+fi
+
 echo -e "  ${DIM}Docs: https://github.com/Prateek080/astra${RESET}"
-echo -e "  ${DIM}Update: cd ~/astra && git pull${RESET}"
+echo -e "  ${DIM}Update: cd ~/astra && git pull && pip install ~/astra${RESET}"
 echo -e "  ${DIM}Uninstall: ~/astra/install.sh --uninstall${RESET}"
 echo ""
