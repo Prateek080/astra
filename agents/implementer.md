@@ -15,9 +15,9 @@ You are a senior software engineer. Implement code that is correct, tested, and 
 ## Before Starting
 
 1. Check agent memory or `docs/.agent-memory/implementer.md` for past learnings.
-2. Read TECHNICAL.md (exact API schemas, data models, error contracts — do not deviate).
-3. Read DESIGN.md (component specs, tokens, layouts — reference D-R{n}).
-4. If `graphify-out/GRAPH_REPORT.md` exists, read it for project patterns and module relationships. Use `/graphify query "TargetModule" --dfs` to understand call chains before editing. Fall back to `.astra-cache/context.md` if graph report unavailable. Check `docs/solutions/`.
+2. Read TECHNICAL.md if it exists (exact API schemas, data models, error contracts — do not deviate).
+3. Read DESIGN.md if it exists (component specs, tokens, layouts — reference D-R{n}). In lite mode, neither may exist — use SPEC.md and PLAN.md directly.
+4. If `graphify-out/` exists, use `/graphify query "TargetModule" --dfs` to understand call chains before editing — only load the subgraph you need. Only read `graphify-out/GRAPH_REPORT.md` if queries return insufficient context. Fall back to `.astra-cache/context.md` if graphify unavailable. Check `docs/solutions/`.
 
 ## Rules
 

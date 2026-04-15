@@ -10,7 +10,8 @@ argument-hint: "[feature description] [--lite] [--interactive]"
 You are orchestrating a complete development pipeline. You handle ALL agent communication, validate outputs, maintain the traceability chain R{n} → D-R{n}/T-R{n} → Phase → Test, and manage review gates.
 
 **Speed optimizations active by default:**
-- **Knowledge graph context** — `/graphify` builds persistent graph in Step 0, all agents read `graphify-out/GRAPH_REPORT.md` (falls back to `.astra-cache/context.md`)
+- **Knowledge graph context** — `/graphify` builds persistent graph in Step 0. Agents use `/graphify query` for targeted lookups first, only read full `GRAPH_REPORT.md` when queries are insufficient. Falls back to `.astra-cache/context.md` if graphify unavailable.
+- **Lean orchestrator** — After each step's gate passes, summarize the output in 2-3 lines and save to `forge-state.json`. Do NOT carry full artifact content forward. Agents read full files from disk — you only need summaries to coordinate.
 - **Parallel stages** — Designer + Planner run concurrently
 - **Zero-stop** — stages validate internally and proceed automatically. Only stops on failures (two-strike rule) or blockers.
 - **Lite mode** — auto-detected for simple features (≤3 requirements, single type)
@@ -31,22 +32,41 @@ Check if `~/.claude/CLAUDE.md` contains `<!-- astra:managed -->`.
 Check if project root `CLAUDE.md` contains `<!-- astra:managed -->`.
 **If NOT found:** "Project not set up — running init." Execute `/astra:init` inline, then continue.
 
-### 0c. Load context
+### 0c. Check for resumption (early — before loading context)
 
-1. Read project CLAUDE.md, README, and `docs/.agent-memory/forge-feedback.md` (if exists).
+Create `.astra-cache/` dir first (`mkdir -p .astra-cache`).
+
+**State file (preferred):** Check `.astra-cache/forge-state.json`. If it exists:
+- Read `last_completed_step`, `feature`, `mode`, `timestamp`, `summaries`, `gates`
+- Load the `summaries` object — this is your context for what happened in prior steps (replaces full artifacts you don't need to re-read)
+- "Previous forge run for [feature] completed Step [N] at [timestamp]. Resume from Step [N+1]?" → Resume jumps to that step, **skipping 0d-0e below**.
+- "Start fresh?" → Archive existing artifacts (same logic as Step 1a), delete `forge-state.json`, continue below.
+
+**Artifact-based fallback** (if no forge-state.json):
+- **All exist + PLAN.md has phases:** "Previous forge artifacts found for [feature]. Resume or start fresh?" → Resume jumps to Step 4.
+- **SPEC.md + DESIGN.md + PLAN.md, no TECHNICAL.md:** Resume jumps to Step 3.
+- **SPEC.md + DESIGN.md, no PLAN.md:** Resume jumps to Step 2.
+- **Only SPEC.md:** Resume jumps to Step 2.
+- **None exist:** Proceed normally.
+
+When starting fresh, archive existing artifacts to `docs/` first (same logic as Step 1a).
+
+### 0d. Load context (skipped on resume)
+
+1. Read project CLAUDE.md and `docs/.agent-memory/forge-feedback.md` (if exists).
 2. Read PRODUCT.md if exists — summarize existing features. If not: "First forge run. PRODUCT.md created after completion."
 
-### 0d. Codebase context
+### 0e. Codebase context (skipped on resume)
 
 **Knowledge graph (preferred):**
 1. If `graphify-out/graph.json` exists → run `/graphify --update` (incremental — fast, code-only changes skip LLM)
 2. If no `graph.json` → run `/graphify` (full build — auto-installs on first use)
 3. If graphify fails or is unavailable → fall back to flat scan below
 
-The graph persists across forge runs. Each run enriches it. Agents read `graphify-out/GRAPH_REPORT.md` for context and can use `/graphify query` for targeted lookups.
+The graph persists across forge runs. Each run enriches it. Agents use `/graphify query` for targeted lookups first; they only read full `GRAPH_REPORT.md` when queries are insufficient.
 
 **Flat scan fallback:**
-Create `.astra-cache/` dir. Scan codebase and write `.astra-cache/context.md` with these sections:
+Scan codebase and write `.astra-cache/context.md` with these sections:
 - **Tech Stack** — framework, language, database, styling, testing (from package.json/config files)
 - **Project Structure** — component paths, API routes, models, tests, config files
 - **Frontend Patterns** — component library, design tokens, CSS approach, layout patterns
@@ -54,17 +74,6 @@ Create `.astra-cache/` dir. Scan codebase and write `.astra-cache/context.md` wi
 - **Conventions** — file naming, test location, import aliases
 
 **Scan strategy:** Read config files → targeted Glob for dirs → read 1-2 representative files per category. Don't read every file.
-
-### 0e. Check for resumption
-
-Check for existing artifacts (SPEC.md, DESIGN.md, PLAN.md, TECHNICAL.md):
-- **All exist + PLAN.md has phases:** "Previous forge artifacts found for [feature]. Resume or start fresh?" → Resume jumps to Step 4 (Implementation).
-- **SPEC.md + DESIGN.md + PLAN.md, no TECHNICAL.md:** "Spec, design, plan exist. Continue to technical design or start fresh?" → Continue jumps to Step 3.
-- **SPEC.md + DESIGN.md, no PLAN.md:** "Spec and design exist. Continue to planning or start fresh?" → Continue jumps to Step 2.
-- **Only SPEC.md:** "Spec exists. Continue to design or start fresh?" → Continue jumps to Step 2.
-- **None exist:** Proceed normally.
-
-When starting fresh, archive existing artifacts to `docs/` first (same logic as Step 1a).
 
 ### 0f. Get feature description
 
@@ -89,14 +98,26 @@ Write output to SPEC.md. Verify structure: `# Feature:`, `## Requirements` with 
 ### 1d. Detect complexity
 
 Scan `### R{n}` patterns → build ID list. Count frontend vs backend vs full-stack.
-- **Lite mode:** ≤3 requirements AND single type (frontend-only OR backend-only) AND no `--interactive` flag
-- **Full mode:** 4+ requirements OR full-stack OR `--interactive` flag
+- **Lite mode:** ≤3 requirements AND single type (frontend-only OR backend-only)
+- **Full mode:** 4+ requirements OR full-stack
+`--interactive` is orthogonal — it adds approval gates to whichever mode is detected, it does not force full mode.
 
 ### 1e. Stage gate — SPEC eval
 
 Run **SPEC Eval** from stage-gate skill (S1–S5). Pass/warn/fail logic applies.
 
 **Interactive mode:** Pause with full summary after eval passes. Wait for approval.
+
+### 1f. Summarize and checkpoint
+
+**Summarize** SPEC.md output in 2-3 lines (requirement count, IDs, types, mode detected). Discard full spec content from your working memory — agents read the file from disk.
+
+Write `.astra-cache/forge-state.json`:
+```json
+{"last_completed_step": 1, "feature": "...", "mode": "full|lite", "timestamp": "<ISO>",
+ "summaries": {"spec": "<2-3 line summary>"},
+ "gates": {"S1": "pass", "S2": "pass", ...}}
+```
 
 ---
 
@@ -130,6 +151,12 @@ Run **PLAN Eval** from stage-gate skill (P1–P4). Pass/warn/fail logic applies.
 
 **Interactive mode:** Pause with full design + plan summary after evals pass. Wait for approval.
 
+### 2c. Summarize and checkpoint
+
+**Summarize** DESIGN.md (component count, D-R coverage, key flows) and PLAN.md (phase count, parallel groups, total tasks) in 2-3 lines each. Discard full design and plan content from your working memory.
+
+Update `forge-state.json` with `last_completed_step: 2`, add `summaries.design` and `summaries.plan`, add gate results.
+
 ---
 
 ## Step 3: Architect Agent → TECHNICAL.md
@@ -138,13 +165,19 @@ Run **PLAN Eval** from stage-gate skill (P1–P4). Pass/warn/fail logic applies.
 
 ### 3a. Delegate to Architect agent
 
-"Create technical design from SPEC.md, DESIGN.md, PLAN.md. Produce TECHNICAL.md with T-R{n} traceability, ADRs, API contracts, data models."
+"Create technical design. Read SPEC.md and DESIGN.md from disk. Produce TECHNICAL.md with T-R{n} traceability, ADRs, API contracts, data models."
 
 ### 3b. Stage gate — TECHNICAL eval
 
 Write output to TECHNICAL.md. Run **TECHNICAL Eval** from stage-gate skill (T1–T5). Pass/warn/fail logic applies.
 
 **Interactive mode:** Pause with full ADR + API + data model summary after eval passes. Wait for approval.
+
+### 3c. Summarize and checkpoint
+
+**Summarize** TECHNICAL.md (ADR count, API endpoint count, data models, T-R coverage) in 2-3 lines. Discard full technical content from your working memory.
+
+Update `forge-state.json` with `last_completed_step: 3`, add `summaries.technical`, add gate results.
 
 ---
 
@@ -154,7 +187,7 @@ Delegate to `commands/implement.md` logic.
 
 ### 4a. Scope
 
-Read PLAN.md. Skip phases marked `**Status: complete**`. Group parallel phases into batches.
+Delegate scoping to the implementer — it reads PLAN.md from disk. Pass only the mode (full/lite) and phase count from your summary. Do not re-read PLAN.md in the orchestrator.
 
 ### 4b. Execute phases
 
@@ -166,19 +199,32 @@ After each phase, run **PHASE Eval** from stage-gate skill (I1–I4). Pass/warn/
 
 ### 4d. Between phases
 
+**Interactive mode:** Pause with phase summary after each phase gate passes. Wait for approval before next phase.
 If context is heavy: "Recommend `/clear` before next phase."
+
+### 4e. Summarize and checkpoint
+
+**Summarize** implementation results (phases completed, tests passing, files changed count) in 2-3 lines. Discard per-phase implementation details from your working memory.
+
+Update `forge-state.json` with `last_completed_step: 4`, add `summaries.implementation`, add per-phase gate results.
 
 ---
 
 ## Step 5: Final Review
 
-1. Spawn reviewer: "Review all changes. Verify acceptance criteria (Given/When/Then) for each R{n}. Check implementation matches DESIGN.md and TECHNICAL.md."
+1. Spawn reviewer: **Full mode:** "Review all changes. Verify acceptance criteria (Given/When/Then) for each R{n}. Cross-check implementation against DESIGN.md and TECHNICAL.md." **Lite mode:** "Review all changes. Verify acceptance criteria for each R{n}. Validate against SPEC.md and PLAN.md."
 
 2. Present findings: Critical (must fix) / Warning (should fix) / Suggestion (consider).
 
 3. Fix criticals, re-test. Two-strike rule applies.
 
 4. Acceptance check: "R1: PASS — [evidence]" or "R2: FAIL — [gap]". Fix failures.
+
+### 5a. Summarize and checkpoint
+
+**Summarize** review results (criticals fixed, warnings noted, acceptance per R{n}) in 2-3 lines.
+
+Update `forge-state.json` with `last_completed_step: 5`, add `summaries.review`, add acceptance results.
 
 ---
 
@@ -198,7 +244,7 @@ Run `/graphify --update` to absorb new code into the knowledge graph (best-effor
 
 ### 6d. Clean up cache
 
-Delete `.astra-cache/` directory — it's only valid for this forge run.
+Delete `.astra-cache/` directory (including `forge-state.json`) — it's only valid for this forge run.
 
 ### 6e. Document solutions
 
@@ -218,7 +264,7 @@ If non-obvious problems were solved: "Want me to run `/astra:compound` to docume
 
 1. **You are the coordinator.** All communication flows through you. Agents never talk to each other.
 
-2. **Agents read `graphify-out/GRAPH_REPORT.md` (preferred) or `.astra-cache/context.md` (fallback)** — never re-scan independently. Agents can use `/graphify query` for targeted lookups when the graph exists.
+2. **Agents query graphify first, read full report only if needed.** Pattern: `/graphify query "topic"` → targeted subgraph. Only read `graphify-out/GRAPH_REPORT.md` if query returns insufficient context. Fall back to `.astra-cache/context.md` if graphify unavailable. Agents never re-scan independently.
 
 3. **Zero-stop is default.** Validate internally, print one-line progress, proceed. Only stop on failures (two-strike) or blockers. `--interactive` adds manual approval gates.
 
@@ -230,8 +276,10 @@ If non-obvious problems were solved: "Want me to run `/astra:compound` to docume
 
 7. **Parallel stages.** Designer + Planner run concurrently in full mode. Neither depends on the other's output.
 
-8. **Context hygiene.** Delegate to subagents. Recommend `/clear` between phase groups.
+8. **Lean orchestrator.** After each step's gate passes, summarize the output and discard full content. You carry summaries + gate results, not artifacts. Agents read files from disk. This keeps your context under ~3k tokens instead of 15k+.
 
-9. **Handle interruptions.** "Resume by running `/astra:forge` again — it detects existing artifacts."
+9. **Context hygiene.** Delegate to subagents. Recommend `/clear` between phase groups.
 
-10. **No partial artifacts.** Either produce a valid artifact or leave previous state intact.
+10. **Handle interruptions.** "Resume by running `/astra:forge` again — it reads `forge-state.json` to pick up from the last completed step."
+
+11. **No partial artifacts.** Either produce a valid artifact or leave previous state intact.

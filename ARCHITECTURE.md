@@ -61,16 +61,16 @@ Legend: `🟣 agent` `📄 artifact` `🔒 gate (deterministic)` `⚙️ action`
   ║   ┃                                                                     ┃  ║
   ║   ┃  Check ~/.claude/CLAUDE.md ──▶ missing? ──▶ run /astra:setup       ┃  ║
   ║   ┃  Check project CLAUDE.md   ──▶ missing? ──▶ run /astra:init        ┃  ║
-  ║   ┃  Load PRODUCT.md (existing features)                                ┃  ║
+  ║   ┃  Check forge-state.json ──▶ resume from last step (skip below)      ┃  ║
   ║   ┃                                                                     ┃  ║
-  ║   ┃  🔀 Knowledge graph (preferred):                                    ┃  ║
+  ║   ┃  Load PRODUCT.md (existing features)   [skipped on resume]          ┃  ║
+  ║   ┃                                                                     ┃  ║
+  ║   ┃  🔀 Knowledge graph (preferred):       [skipped on resume]          ┃  ║
   ║   ┃     graphify-out/graph.json exists? ──▶ /graphify --update          ┃  ║
   ║   ┃     no graph.json? ──▶ /graphify (full build)                       ┃  ║
   ║   ┃     graphify unavailable? ──▶ flat scan fallback below              ┃  ║
   ║   ┃  Flat scan fallback ──▶ .astra-cache/context.md                     ┃  ║
   ║   ┃               (tech stack, structure, patterns, conventions)        ┃  ║
-  ║   ┃                                                                     ┃  ║
-  ║   ┃  Check existing artifacts ──▶ offer resume or fresh start           ┃  ║
   ║   ┃                                                                     ┃  ║
   ║   ┃  🔀 Detect mode:                                                   ┃  ║
   ║   ┃     ≤3 reqs + single type ──▶ LITE (skip design + architect)       ┃  ║
@@ -81,7 +81,7 @@ Legend: `🟣 agent` `📄 artifact` `🔒 gate (deterministic)` `⚙️ action`
   ║   ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  ║
   ║   ┃ 🟣 STEP 1 — PM AGENT                                 [read-only]  ┃  ║
   ║   ┃                                                                     ┃  ║
-  ║   ┃  Reads: GRAPH_REPORT.md (or context.md), PRODUCT.md, memory         ┃  ║
+  ║   ┃  Context: /graphify query → GRAPH_REPORT.md → context.md            ┃  ║
   ║   ┃  Skill: pm-framework (RICE, Given/When/Then)                        ┃  ║
   ║   ┃                                                                     ┃  ║
   ║   ┃  Ask 3-5 deep questions                                             ┃  ║
@@ -114,7 +114,7 @@ Legend: `🟣 agent` `📄 artifact` `🔒 gate (deterministic)` `⚙️ action`
   ║   ┃  ┌─────────────────────────────┐  ┌──────────────────────────────┐  ┃  ║
   ║   ┃  │ 🔵 DESIGNER        [R/O]   │  │ 🟢 PLANNER          [R/O]   │  ┃  ║
   ║   ┃  │                             │  │                              │  ┃  ║
-  ║   ┃  │ Reads: SPEC.md, GRAPH_RPT  │  │ Reads: SPEC.md, GRAPH_RPT  │  ┃  ║
+  ║   ┃  │ Context: query → RPT → ctx │  │ Context: query → RPT → ctx │  ┃  ║
   ║   ┃  │ Skill: design-system        │  │ Skill: plan-template        │  ┃  ║
   ║   ┃  │                             │  │                              │  ┃  ║
   ║   ┃  │ User journeys & flows       │  │ Explore codebase structure   │  ┃  ║
@@ -142,7 +142,7 @@ Legend: `🟣 agent` `📄 artifact` `🔒 gate (deterministic)` `⚙️ action`
   ║   ┃ 🟣 STEP 3 — ARCHITECT AGENT                      [read-only]      ┃  ║
   ║   ┃ (FULL MODE ONLY — skipped in lite)                                  ┃  ║
   ║   ┃                                                                     ┃  ║
-  ║   ┃  Reads: SPEC.md + DESIGN.md + PLAN.md + GRAPH_REPORT.md             ┃  ║
+  ║   ┃  Context: /graphify query → GRAPH_REPORT.md → context.md            ┃  ║
   ║   ┃  Skill: technical-architecture                                      ┃  ║
   ║   ┃                                                                     ┃  ║
   ║   ┃  API contracts (endpoints, req/res schemas)                         ┃  ║
@@ -162,7 +162,7 @@ Legend: `🟣 agent` `📄 artifact` `🔒 gate (deterministic)` `⚙️ action`
   ║   ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  ║
   ║   ┃ 🟣 STEP 4 — IMPLEMENTER AGENT                    [read-write]     ┃  ║
   ║   ┃                                                                     ┃  ║
-  ║   ┃  Reads: TECHNICAL.md, DESIGN.md, PLAN.md, GRAPH_REPORT.md           ┃  ║
+  ║   ┃  Context: /graphify query → GRAPH_REPORT.md → context.md            ┃  ║
   ║   ┃  Skill: implementation-patterns (test-first, phased)                ┃  ║
   ║   ┃                                                                     ┃  ║
   ║   ┃  ┌────────────────────────────────────────────────────────────┐     ┃  ║
@@ -310,7 +310,8 @@ Gate logic:   PASS ──▶ proceed
 
 Agents never talk to each other.
 All data flows through artifacts: SPEC → DESIGN → PLAN → TECHNICAL → Code
-All agents read graphify-out/GRAPH_REPORT.md (preferred) or .astra-cache/context.md (fallback).
+All agents query graphify first (/graphify query), read full GRAPH_REPORT.md only if needed.
+Orchestrator carries summaries + gate results only. Agents read full files from disk.
 ```
 
 ---
@@ -373,6 +374,7 @@ graphify-out/               (persists across forge runs, enriches over time, git
 
 .astra-cache/               (per forge run, not committed, cleaned in Step 6)
 ├── context.md              Flat codebase scan (fallback when graphify unavailable)
+├── forge-state.json        Checkpoint/resume + artifact summaries + gate results (lean orchestrator state)
 ├── pipeline-state.json     Checkpoint/resume state (SDK path only)
 └── audit.jsonl             Tool use audit trail
 

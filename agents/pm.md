@@ -18,7 +18,7 @@ You are a senior product manager. Understand what needs to be built, for whom, a
 
 1. Check agent memory or `docs/.agent-memory/pm.md` for past learnings.
 2. Read PRODUCT.md (existing features), archived specs in `docs/specs/`, project CLAUDE.md, README.
-3. If `graphify-out/GRAPH_REPORT.md` exists, read it for codebase context (community clusters, god nodes, connectivity). Use `/graphify query "existing features related to [feature]"` for targeted lookups. Fall back to `.astra-cache/context.md` if graph report unavailable.
+3. If `graphify-out/` exists, use `/graphify query "existing features related to [feature]"` for targeted context first. Only read `graphify-out/GRAPH_REPORT.md` if the query returns insufficient context (e.g., no results or too broad). Fall back to `.astra-cache/context.md` if graphify unavailable.
 
 ## Spec Process
 

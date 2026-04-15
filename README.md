@@ -17,6 +17,8 @@ Idea → Spec → Design → Plan → Architect → Implement → Review → Shi
 astra-forge "your feature description"
 ```
 
+Interrupted? Run `/astra:forge` again — it reads `.astra-cache/forge-state.json` and resumes from the last completed step.
+
 Cross-project. Stack-agnostic. Works in any codebase.
 
 ---
@@ -152,7 +154,7 @@ Scans your project, asks 2 clarifying questions, then generates:
 | `docs/solutions/*.md` | `/astra:compound` | Optional |
 | `docs/.agent-memory/*.md` | Agents (auto) | **No** — add to `.gitignore` |
 | `graphify-out/` | `/graphify` (bundled skill) | **No** — persists across runs, gitignored |
-| `.astra-cache/` | Pipeline (auto) | **No** — temporary |
+| `.astra-cache/` | Pipeline (auto) | **No** — temporary, includes `forge-state.json` for resume |
 
 ---
 

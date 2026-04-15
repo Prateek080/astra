@@ -1,6 +1,6 @@
 #!/bin/bash
-# Hook: SubagentStart — remind subagents to read context sources.
-# Checks graphify-out/GRAPH_REPORT.md first, falls back to .astra-cache/context.md.
+# Hook: SubagentStart — remind subagents to use graphify query-first for context.
+# Priority: /graphify query (targeted) → GRAPH_REPORT.md (full) → context.md (flat scan).
 
 GRAPH_REPORT="graphify-out/GRAPH_REPORT.md"
 CACHE_FILE=".astra-cache/context.md"
@@ -8,7 +8,7 @@ CACHE_FILE=".astra-cache/context.md"
 if [ -f "$GRAPH_REPORT" ]; then
     cat <<'HOOKJSON'
 {
-  "systemMessage": "IMPORTANT: Read graphify-out/GRAPH_REPORT.md for codebase context (knowledge graph with community clusters, god nodes, and connectivity patterns). For targeted lookups, use `/graphify query \"topic\"` or `/graphify path \"A\" \"B\"`. Do not re-scan the codebase independently."
+  "systemMessage": "IMPORTANT: Use `/graphify query \"topic\"` or `/graphify path \"A\" \"B\"` for targeted codebase context first. Only read graphify-out/GRAPH_REPORT.md if query returns insufficient results. Do not re-scan the codebase independently."
 }
 HOOKJSON
 elif [ -f "$CACHE_FILE" ]; then

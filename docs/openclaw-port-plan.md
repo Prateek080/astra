@@ -460,17 +460,17 @@ OpenClaw agents invoke graphify via CLI commands (`graphify query "..."`, `graph
 
 ### Usage per agent
 
-Agents read `graphify-out/GRAPH_REPORT.md` as a tracked file, and run CLI queries for targeted context:
+Agents use **query-first** pattern: CLI query for targeted context first, read full `GRAPH_REPORT.md` only if query returns insufficient results:
 
-| Agent | GRAPH_REPORT.md | CLI query | Budget |
+| Agent | CLI query (first) | Full GRAPH_REPORT.md | Budget |
 |---|---|---|---|
-| **PM** | Read for existing features overview | `graphify query "existing features and user flows"` | `--budget 600` |
-| **Designer** | Read for component graph, UI patterns | `graphify query "UI components, design tokens, CSS patterns"` | `--budget 800` |
-| **Planner** | Read for community clusters (= phase boundaries) | `graphify query "project structure, dependencies, test patterns"` | `--budget 500` |
-| **Architect** | Read for service topology, data models | `graphify query "API routes, data models, auth, error handling"` | `--budget 800` |
-| **Coder** | Read full report before coding | `graphify query "TargetModule" --dfs` for call chains | — |
-| **Reviewer** | Read for architecture context | `graphify query "recent changes and affected modules"` | `--budget 600` |
-| **Debugger** | Read for module relationships | `graphify query "ErrorModule" --dfs` for call paths | `--budget 600` |
+| **PM** | `graphify query "existing features and user flows"` | Only if query insufficient | `--budget 600` |
+| **Designer** | `graphify query "UI components, design tokens, CSS patterns"` | Only if query insufficient | `--budget 800` |
+| **Planner** | `graphify query "project structure, dependencies, test patterns"` | Only if query insufficient | `--budget 500` |
+| **Architect** | `graphify query "API routes, data models, auth, error handling"` | Only if query insufficient | `--budget 800` |
+| **Coder** | `graphify query "TargetModule" --dfs` for call chains | Only if query insufficient | — |
+| **Reviewer** | `graphify query "recent changes and affected modules"` | Only if query insufficient | `--budget 600` |
+| **Debugger** | `graphify query "ErrorModule" --dfs` for call paths | Only if query insufficient | `--budget 600` |
 
 ### Graph rebuild triggers
 
@@ -781,6 +781,14 @@ Suggested phased implementation:
 9. **Backward compatibility** — Should the OpenClaw version maintain the same artifact format as Claude Code version so you can switch between them on the same project?
 
 10. **ClawHub publishing** — Should Astra be published as a ClawHub skill/plugin for the community?
+
+11. **Parallel feature runs (known limitation — revisit during OpenClaw port)** — Astra's current design assumes one active forge run at a time. All runs share a single `.astra-cache/` directory (no namespacing) and a single `graphify-out/graph.json`. Running two forge runs in parallel on the same project will cause:
+    - `.astra-cache/` file overwrites (context.md, spec.md, design.md stomped by second run)
+    - `graph.json` race condition if both runs call `/graphify --update` simultaneously
+    - Stage gates checking wrong artifacts (Feature B's content evaluated against Feature A's gates)
+    - No cross-run conflict detection (both features may touch the same files with no warning until git merge)
+    
+    **When to fix:** When OpenClaw port begins, scope `.astra-cache/` by branch or run ID (e.g., `.astra-cache/feature-auth/`). Add a planner step that runs `git diff main` against other active branches to surface conflict surface area before implementation. The cron/HEARTBEAT model in OpenClaw naturally serialises runs, so this may be less urgent there — but worth designing for explicitly. Until then, the safe workflow is sequential forge runs on separate git branches, merging between each.
 
 ---
 

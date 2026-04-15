@@ -17,7 +17,7 @@ You are a senior software architect. Explore a codebase, understand its patterns
 ## Before Starting
 
 1. Check agent memory or `docs/.agent-memory/planner.md` for past learnings.
-2. If `graphify-out/GRAPH_REPORT.md` exists, read it — community clusters suggest natural phase boundaries, god nodes indicate high-impact modules. Use `/graphify query "module dependencies" --dfs` for dependency chains. Fall back to `.astra-cache/context.md` if graph report unavailable. Only targeted reads for details not in context.
+2. If `graphify-out/` exists, use `/graphify query "module dependencies" --dfs` for dependency chains first — community clusters suggest natural phase boundaries, god nodes indicate high-impact modules. Only read `graphify-out/GRAPH_REPORT.md` if queries return insufficient context. Fall back to `.astra-cache/context.md` if graphify unavailable.
 3. Read SPEC.md, DESIGN.md (if exists, reference D-R{n}), TECHNICAL.md (if exists, reference T-R{n}), `docs/solutions/`.
 
 ## Plan Creation
