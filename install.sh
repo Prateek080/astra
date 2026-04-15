@@ -168,16 +168,21 @@ if [ "$HAS_CLAUDE" = true ]; then
     if claude plugin marketplace add "$ASTRA_DIR" 2>/dev/null; then
       ok "Marketplace registered"
     else
-      warn "Marketplace registration failed"
+      # Already registered — update it
+      claude plugin marketplace update local 2>/dev/null
+      ok "Marketplace updated"
     fi
 
-    # Install plugin (idempotent)
-    if claude plugin install astra@local 2>/dev/null; then
-      ok "Plugin installed for Claude Code"
+    # Install or update plugin
+    if claude plugin list 2>/dev/null | grep -q "astra@local"; then
+      claude plugin update astra@local 2>/dev/null
+      ok "Plugin updated for Claude Code"
     else
-      # Might already be installed — just enable
-      claude plugin enable astra@local 2>/dev/null && ok "Plugin enabled" || \
+      if claude plugin install astra@local 2>/dev/null; then
+        ok "Plugin installed for Claude Code"
+      else
         warn "Plugin install failed. Try: claude plugin install astra@local"
+      fi
     fi
   fi
 fi
