@@ -242,19 +242,39 @@ Move SPEC.md → `docs/specs/`, DESIGN.md → `docs/designs/`, PLAN.md → `docs
 
 Run `/graphify --update` to absorb new code into the knowledge graph (best-effort — failure does not block wrap-up). Do NOT delete `graphify-out/` — it persists and enriches across runs.
 
-### 6d. Clean up cache
+### 6d. Print run summary
+
+Read `forge-state.json` summaries and print a consolidated report:
+
+```
+──── Forge Summary ────
+Feature: [name]
+Mode: [full/lite]
+
+Step 1 — Spec:     [summary from forge-state.json]
+Step 2 — Design:   [summary]
+Step 2 — Plan:     [summary]
+Step 3 — Arch:     [summary, or "skipped (lite mode)"]
+Step 4 — Impl:     [summary]
+Step 5 — Review:   [summary]
+
+Gates: [N passed, N warned, N failed]
+───────────────────────
+```
+
+### 6e. Clean up cache
 
 Delete `.astra-cache/` directory (including `forge-state.json`) — it's only valid for this forge run.
 
-### 6e. Document solutions
+### 6f. Document solutions
 
 If non-obvious problems were solved: "Want me to run `/astra:compound` to document these?"
 
-### 6f. Collect feedback
+### 6g. Collect feedback
 
 "Forge complete! (1) What worked well? (2) What to improve?" Persist to `docs/.agent-memory/forge-feedback.md`.
 
-### 6g. Next steps
+### 6h. Next steps
 
 "Run `/astra:ship` to commit and PR. Or `/astra:retrospective` for process assessment."
 
