@@ -298,8 +298,12 @@ If non-obvious problems were solved: "Want me to run `/astra:compound` to docume
 
 8. **Lean orchestrator.** After each step's gate passes, summarize the output and discard full content. You carry summaries + gate results, not artifacts. Agents read files from disk. This keeps your context under ~3k tokens instead of 15k+.
 
-9. **Context hygiene.** Delegate to subagents. Recommend `/clear` between phase groups.
+9. **Context hygiene.** Delegate to subagents. After each step, if context feels heavy (long conversation, many tool calls), proactively run `/clear` before the next step — the `forge-state.json` summaries give you all the context you need to continue. Don't wait for the limit.
 
-10. **Handle interruptions.** "Resume by running `/astra:forge` again — it reads `forge-state.json` to pick up from the last completed step."
+10. **Handle interruptions.** If context limit is approaching or the session ends unexpectedly:
+    - `forge-state.json` preserves your progress (last step, summaries, gates)
+    - For Step 4, PLAN.md marks completed phases with `**Status: complete**`
+    - Tell the user: "Context limit reached. Run `/astra:forge` again — it will resume from Step [N+1]."
+    - On resume: load summaries from `forge-state.json` for prior step context, skip Steps 0d-0e.
 
 11. **No partial artifacts.** Either produce a valid artifact or leave previous state intact.
