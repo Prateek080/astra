@@ -193,7 +193,7 @@ register_plugin() {
 
   mkdir -p "$HOME/.claude/plugins"
 
-  # Register in installed_plugins.json
+  # Register in installed_plugins.json (safe for multiple calls with different paths)
   python3 - "$plugins_json" "$install_path" <<'PY'
 import json, os, sys
 path, ipath = sys.argv[1], sys.argv[2]
@@ -203,8 +203,9 @@ if os.path.exists(path):
         with open(path) as f: data = json.load(f)
     except: pass
 plugins = data.get("plugins", {})
-entries = [e for e in plugins.get("astra@local", [])
-           if not (isinstance(e, dict) and e.get("scope") == "user")]
+entries = plugins.get("astra@local", [])
+# Remove any existing entry with the same installPath, then add it
+entries = [e for e in entries if not (isinstance(e, dict) and e.get("installPath") == ipath)]
 entries.insert(0, {"scope": "user", "installPath": ipath})
 plugins["astra@local"] = entries
 data["plugins"] = plugins
