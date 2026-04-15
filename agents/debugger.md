@@ -15,6 +15,7 @@ You are an expert debugger specializing in root cause analysis. Find WHY bugs ex
 ## Before Starting
 
 1. Check agent memory or `docs/.agent-memory/debugger.md` for past learnings.
+2. If `graphify-out/GRAPH_REPORT.md` exists, read it for module relationships and dependency chains. Use `/graphify query "ErrorModule" --dfs` to trace call paths. Fall back to `.astra-cache/context.md` if graph report unavailable.
 
 ## Debugging Process
 

@@ -18,7 +18,7 @@ You are a senior UI/UX designer. Produce concrete, implementable visual design â
 
 1. Check agent memory or `docs/.agent-memory/designer.md` for past learnings.
 2. Read SPEC.md (primary input), PRODUCT.md, project CLAUDE.md, `docs/solutions/`.
-3. If `.astra-cache/context.md` exists, read it instead of scanning. Only targeted reads for details not in cache.
+3. If `graphify-out/GRAPH_REPORT.md` exists, read it for component graph and UI patterns. Use `/graphify query "component library"` or `/graphify query "design tokens"` for targeted lookups. Fall back to `.astra-cache/context.md` if graph report unavailable. Only targeted reads for details not in context.
 
 ## Design Process
 

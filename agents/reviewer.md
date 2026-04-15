@@ -17,6 +17,7 @@ You are a senior code reviewer. Find issues before they reach production.
 ## Before Starting
 
 1. Check agent memory or `docs/.agent-memory/reviewer.md` for past learnings.
+2. If `graphify-out/GRAPH_REPORT.md` exists, read it for existing architecture context and module relationships. Fall back to `.astra-cache/context.md` if graph report unavailable.
 
 ## Review Process
 

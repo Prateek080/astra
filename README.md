@@ -151,6 +151,7 @@ Scans your project, asks 2 clarifying questions, then generates:
 | `docs/plans/*.md` | Auto-archived | Optional |
 | `docs/solutions/*.md` | `/astra:compound` | Optional |
 | `docs/.agent-memory/*.md` | Agents (auto) | **No** — add to `.gitignore` |
+| `graphify-out/` | `/graphify` (bundled skill) | **No** — persists across runs, gitignored |
 | `.astra-cache/` | Pipeline (auto) | **No** — temporary |
 
 ---
@@ -193,7 +194,7 @@ Python-driven pipeline via Claude Agent SDK. Deterministic control flow, program
 
 ### Both paths share:
 - Same 7 agents (PM, designer, architect, planner, implementer, reviewer, debugger)
-- Same 11 skills (methodology files)
+- Same 12 skills (methodology files + knowledge graph)
 - Same artifacts (SPEC.md, DESIGN.md, PLAN.md, TECHNICAL.md)
 - Same stage-gate checks (S1-S5, D1-D5, P1-P4, T1-T5, I1-I4)
 - Same traceability: R{n} → D-R{n}/T-R{n} → Phase → Test
@@ -418,7 +419,7 @@ Template rules in `rules/` are copied to `.claude/rules/` during `/astra:init`:
 ```
 astra/
 ├── .claude-plugin/plugin.json       Claude Code manifest (agents, skills, hooks)
-├── .cursor-plugin/plugin.json       Cursor manifest (synced with Claude Code)
+├── .cursor-plugin/plugin.json       Cursor manifest (no hooks)
 │
 ├── commands/                        /astra:* markdown commands (15 files)
 │   ├── forge.md                     Automated pipeline orchestrator
@@ -431,7 +432,7 @@ astra/
 │   ├── pm.md, designer.md, architect.md, planner.md
 │   ├── implementer.md, reviewer.md, debugger.md
 │
-├── skills/                          11 reusable methodology skills
+├── skills/                          12 reusable methodology skills
 │   ├── pm-framework/                PRD, RICE, Given/When/Then
 │   ├── design-system/               UI/UX tokens, components, accessibility
 │   ├── technical-architecture/      API contracts, data models, ADRs
@@ -442,7 +443,8 @@ astra/
 │   ├── debugging-methodology/       Root cause analysis
 │   ├── debt-audit/                  Tech debt scanner
 │   ├── workflow-guide/              Usage patterns
-│   └── retrospective/              Process assessment
+│   ├── retrospective/              Process assessment
+│   └── graphify/                    Knowledge graph — codebase context engine
 │
 ├── orchestrator/                    Python SDK orchestrator (Astra v2)
 │   ├── __main__.py                  CLI entry point (astra-forge)

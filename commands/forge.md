@@ -10,7 +10,7 @@ argument-hint: "[feature description] [--lite] [--interactive]"
 You are orchestrating a complete development pipeline. You handle ALL agent communication, validate outputs, maintain the traceability chain R{n} → D-R{n}/T-R{n} → Phase → Test, and manage review gates.
 
 **Speed optimizations active by default:**
-- **Codebase scan cache** — one scan in Step 0, all agents read `.astra-cache/context.md`
+- **Knowledge graph context** — `/graphify` builds persistent graph in Step 0, all agents read `graphify-out/GRAPH_REPORT.md` (falls back to `.astra-cache/context.md`)
 - **Parallel stages** — Designer + Planner run concurrently
 - **Zero-stop** — stages validate internally and proceed automatically. Only stops on failures (two-strike rule) or blockers.
 - **Lite mode** — auto-detected for simple features (≤3 requirements, single type)
@@ -36,8 +36,16 @@ Check if project root `CLAUDE.md` contains `<!-- astra:managed -->`.
 1. Read project CLAUDE.md, README, and `docs/.agent-memory/forge-feedback.md` (if exists).
 2. Read PRODUCT.md if exists — summarize existing features. If not: "First forge run. PRODUCT.md created after completion."
 
-### 0d. Codebase scan → `.astra-cache/context.md`
+### 0d. Codebase context
 
+**Knowledge graph (preferred):**
+1. If `graphify-out/graph.json` exists → run `/graphify --update` (incremental — fast, code-only changes skip LLM)
+2. If no `graph.json` → run `/graphify` (full build — auto-installs on first use)
+3. If graphify fails or is unavailable → fall back to flat scan below
+
+The graph persists across forge runs. Each run enriches it. Agents read `graphify-out/GRAPH_REPORT.md` for context and can use `/graphify query` for targeted lookups.
+
+**Flat scan fallback:**
 Create `.astra-cache/` dir. Scan codebase and write `.astra-cache/context.md` with these sections:
 - **Tech Stack** — framework, language, database, styling, testing (from package.json/config files)
 - **Project Structure** — component paths, API routes, models, tests, config files
@@ -184,19 +192,23 @@ Create or update PRODUCT.md with: new feature in Current Features table, new des
 
 Move SPEC.md → `docs/specs/`, DESIGN.md → `docs/designs/`, PLAN.md → `docs/plans/`, TECHNICAL.md → `docs/technical/`. Kebab-case slug, timestamp suffix if exists.
 
-### 6c. Clean up cache
+### 6c. Update knowledge graph
+
+Run `/graphify --update` to absorb new code into the knowledge graph (best-effort — failure does not block wrap-up). Do NOT delete `graphify-out/` — it persists and enriches across runs.
+
+### 6d. Clean up cache
 
 Delete `.astra-cache/` directory — it's only valid for this forge run.
 
-### 6d. Document solutions
+### 6e. Document solutions
 
 If non-obvious problems were solved: "Want me to run `/astra:compound` to document these?"
 
-### 6e. Collect feedback
+### 6f. Collect feedback
 
 "Forge complete! (1) What worked well? (2) What to improve?" Persist to `docs/.agent-memory/forge-feedback.md`.
 
-### 6f. Next steps
+### 6g. Next steps
 
 "Run `/astra:ship` to commit and PR. Or `/astra:retrospective` for process assessment."
 
@@ -206,7 +218,7 @@ If non-obvious problems were solved: "Want me to run `/astra:compound` to docume
 
 1. **You are the coordinator.** All communication flows through you. Agents never talk to each other.
 
-2. **Agents read `.astra-cache/context.md`** — never re-scan independently.
+2. **Agents read `graphify-out/GRAPH_REPORT.md` (preferred) or `.astra-cache/context.md` (fallback)** — never re-scan independently. Agents can use `/graphify query` for targeted lookups when the graph exists.
 
 3. **Zero-stop is default.** Validate internally, print one-line progress, proceed. Only stop on failures (two-strike) or blockers. `--interactive` adds manual approval gates.
 

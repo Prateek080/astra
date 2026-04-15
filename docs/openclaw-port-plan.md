@@ -438,30 +438,65 @@ The skill is methodology-only and doesn't reference tools. However, sections tha
 
 ## 10. Graphify Integration
 
-**Replaces `.astra-cache/context.md`** with a persistent, queryable knowledge graph.
+**Replaces `.astra-cache/context.md`** with a persistent, queryable knowledge graph. Same role across all three editor targets — Claude Code uses the `/graphify` skill, Cursor uses the same skill, OpenClaw uses the CLI directly.
 
-### Setup
+### Installation in OpenClaw
 
-1. First forge run: `graphify . --no-viz` → builds `graphify-out/graph.json` + `GRAPH_REPORT.md`
-2. Subsequent runs: `graphify . --update` → incremental (only changed files)
-3. After coder makes changes: `graphify . --update` → rebuild graph with new code
+Add to BOOTSTRAP.md workspace setup (runs once):
+```bash
+pip install graphifyy --quiet
+```
+
+OpenClaw agents invoke graphify via CLI commands (`graphify query "..."`, `graphify . --update`), not via `/graphify` skill syntax (which is Claude Code/Cursor specific). The Python package provides both the CLI and the library.
+
+### Pipeline integration
+
+| Pipeline step | Graphify action | Fallback |
+|---|---|---|
+| **HEARTBEAT init** (before first agent) | `graphify-out/graph.json` exists? → `graphify . --update` : `graphify . --no-viz` | Skip graph, agents scan manually (degraded) |
+| **After coder completes** | `graphify . --update` (code-only → AST only, no LLM, fast) | Skip — graph stays stale until next heartbeat |
+| **Stale graph (>24h)** | HEARTBEAT triggers `graphify . --update` | — |
+| **After git pull** | `graphify . --update` (detect changed files via manifest) | — |
 
 ### Usage per agent
 
-| Agent | Graphify usage |
-|---|---|
-| PM | `graphify query "existing features and user flows" --budget 600` |
-| Designer | `graphify query "UI components, design tokens, CSS patterns" --budget 800` |
-| Planner | `graphify query "project structure, dependencies, test patterns" --budget 500` |
-| Architect | `graphify query "API routes, data models, auth, error handling" --budget 800` |
-| Coder | Reads full `GRAPH_REPORT.md` before coding, rebuilds after |
-| Reviewer | `graphify query "recent changes and affected modules" --budget 600` |
+Agents read `graphify-out/GRAPH_REPORT.md` as a tracked file, and run CLI queries for targeted context:
+
+| Agent | GRAPH_REPORT.md | CLI query | Budget |
+|---|---|---|---|
+| **PM** | Read for existing features overview | `graphify query "existing features and user flows"` | `--budget 600` |
+| **Designer** | Read for component graph, UI patterns | `graphify query "UI components, design tokens, CSS patterns"` | `--budget 800` |
+| **Planner** | Read for community clusters (= phase boundaries) | `graphify query "project structure, dependencies, test patterns"` | `--budget 500` |
+| **Architect** | Read for service topology, data models | `graphify query "API routes, data models, auth, error handling"` | `--budget 800` |
+| **Coder** | Read full report before coding | `graphify query "TargetModule" --dfs` for call chains | — |
+| **Reviewer** | Read for architecture context | `graphify query "recent changes and affected modules"` | `--budget 600` |
+| **Debugger** | Read for module relationships | `graphify query "ErrorModule" --dfs` for call paths | `--budget 600` |
 
 ### Graph rebuild triggers
 
-- After coder completes a requirement (new code added)
-- After git pull (external changes)
-- On HEARTBEAT if graph is stale (>24h since last update)
+| Trigger | When | What runs | LLM cost |
+|---|---|---|---|
+| Coder completes a requirement | After implementation phase | `graphify . --update` | None (code-only = AST) |
+| External changes | After `git pull` | `graphify . --update` | Only if docs/images changed |
+| Stale timer | HEARTBEAT detects >24h since last update | `graphify . --update` | Depends on changes |
+| `astra-graph-update` cron | Every 8h (see Section 11) | `graphify . --update` | Depends on changes |
+
+### Error handling
+
+- **graphify not installed:** Skip graph, log warning. Agents fall back to manual codebase scanning (slower, no cross-file relationships).
+- **graphify fails mid-build:** Use stale `graph.json` from previous run if available. Log error, don't block pipeline.
+- **Empty graph (new project, no code yet):** GRAPH_REPORT.md will be minimal. Agents supplement with targeted file reads.
+- **Large codebase (>200 files):** graphify auto-warns and suggests running on a subdirectory. HEARTBEAT should scope to `src/` or primary source directory.
+
+### Key differences from Claude Code / Cursor
+
+| Aspect | Claude Code / Cursor | OpenClaw |
+|---|---|---|
+| Invocation | `/graphify` skill (LLM-interpreted) | `graphify` CLI (direct subprocess) |
+| Agent context | Agents read GRAPH_REPORT.md from filesystem | Agents read GRAPH_REPORT.md as tracked file |
+| Queries | `/graphify query "..."` (skill call) | `graphify query "..."` (CLI) |
+| Rebuild trigger | forge.md Step 0 and Step 6 | HEARTBEAT.md + cron job |
+| Install | Skill auto-installs `pip install graphifyy` | BOOTSTRAP.md runs `pip install graphifyy` |
 
 ---
 

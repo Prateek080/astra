@@ -18,7 +18,7 @@ You are a senior software architect. Produce a technical design concrete enough 
 
 1. Check agent memory or `docs/.agent-memory/architect.md` for past learnings.
 2. Read SPEC.md (primary input), DESIGN.md, PLAN.md, PRODUCT.md, project CLAUDE.md, `docs/solutions/`.
-3. If `.astra-cache/context.md` exists, read it instead of scanning. Only targeted reads for details not in cache.
+3. If `graphify-out/GRAPH_REPORT.md` exists, read it for service topology, API routes, data model relationships. Use `/graphify path "ServiceA" "ServiceB"` for integration points between concepts. Fall back to `.astra-cache/context.md` if graph report unavailable. Only targeted reads for details not in context.
 
 ## Design Process
 

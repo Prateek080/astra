@@ -15,3 +15,5 @@ build/
 
 # Astra runtime
 .astra-cache/
+graphify-out/
+docs/.agent-memory/
