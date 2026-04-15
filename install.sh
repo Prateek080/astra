@@ -195,29 +195,59 @@ fi
 install_claude() {
   info "Configuring Claude Code..."
 
-  # Detect shell
-  local shell_rc=""
+  local shell_rc="" is_fish=false
+
+  # Step 1: Detect shell from $SHELL
   case "${SHELL:-}" in
     */zsh)  shell_rc="$HOME/.zshrc" ;;
     */bash) shell_rc="$HOME/.bashrc" ;;
-    */fish) shell_rc="$HOME/.config/fish/config.fish" ;;
+    */fish) shell_rc="$HOME/.config/fish/config.fish"; is_fish=true ;;
   esac
 
-  # Fallback detection
-  if [ -z "$shell_rc" ]; then
-    [ -f "$HOME/.zshrc" ] && shell_rc="$HOME/.zshrc"
-    [ -z "$shell_rc" ] && [ -f "$HOME/.bashrc" ] && shell_rc="$HOME/.bashrc"
+  # Step 2: If detected file doesn't exist, try common alternatives
+  if [ -n "$shell_rc" ] && [ ! -f "$shell_rc" ]; then
+    case "${SHELL:-}" in
+      */zsh)
+        for alt in "$HOME/.zprofile" "$HOME/.profile"; do
+          [ -f "$alt" ] && shell_rc="$alt" && break
+        done
+        ;;
+      */bash)
+        for alt in "$HOME/.bash_profile" "$HOME/.profile"; do
+          [ -f "$alt" ] && shell_rc="$alt" && break
+        done
+        ;;
+    esac
   fi
 
+  # Step 3: If $SHELL not set, probe for existing rc files
   if [ -z "$shell_rc" ]; then
-    warn "Could not detect shell. Add this to your shell config manually:"
-    echo ""
-    echo "  alias claude=\"claude --plugin-dir $ASTRA_DIR\""
-    echo ""
-    return
+    for candidate in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.zprofile" "$HOME/.bash_profile" "$HOME/.profile"; do
+      [ -f "$candidate" ] && shell_rc="$candidate" && break
+    done
   fi
 
-  local alias_line="alias claude=\"claude --plugin-dir $ASTRA_DIR\""
+  # Step 4: Still nothing — create the appropriate rc file for the detected shell
+  if [ -z "$shell_rc" ]; then
+    case "${SHELL:-}" in
+      */zsh)  shell_rc="$HOME/.zshrc" ;;
+      */bash) shell_rc="$HOME/.bashrc" ;;
+      */fish) shell_rc="$HOME/.config/fish/config.fish"; is_fish=true ;;
+      *)      shell_rc="$HOME/.profile" ;;  # POSIX fallback
+    esac
+    info "Creating $(basename "$shell_rc") (no existing shell config found)"
+  fi
+
+  # Ensure parent directory exists (needed for fish)
+  mkdir -p "$(dirname "$shell_rc")"
+
+  # Build alias line (fish uses different syntax)
+  local alias_line
+  if [ "$is_fish" = true ]; then
+    alias_line="alias claude \"claude --plugin-dir $ASTRA_DIR\""
+  else
+    alias_line="alias claude=\"claude --plugin-dir $ASTRA_DIR\""
+  fi
 
   # Check if already configured
   if grep -q 'plugin-dir.*astra' "$shell_rc" 2>/dev/null; then
