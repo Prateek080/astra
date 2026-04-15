@@ -4,10 +4,12 @@ description: Update Astra to the latest version
 
 # Update Astra
 
-Pull the latest changes and re-register the plugin.
+1. Run `git -C ~/astra pull` to fetch latest changes.
+2. Tell the user:
 
-## Steps
+```
+Astra code updated. Run this in your terminal to re-register the plugin:
 
-1. Run `git -C ~/astra pull`
-2. Run `bash ~/astra/install.sh`
-3. Print the output to the user.
+  bash ~/astra/install.sh
+
+```
