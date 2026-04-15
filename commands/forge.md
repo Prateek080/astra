@@ -22,14 +22,14 @@ Use `--interactive` to add manual approval gates between stages. Use `--lite` to
 
 ## Step 0: Prerequisites & Context
 
-### 0a. Check global setup
+### 0a. Check global setup (Claude Code only — skip in Cursor)
 
-Check if `~/.claude/CLAUDE.md` contains `<!-- astra:managed -->`.
-**If NOT found:** "First-time Astra — running setup." Execute `/astra:setup` inline, then continue.
+Check if `~/.claude/CLAUDE.md` contains `<!-- astra:managed -->`. In Cursor, skip this step — Cursor does not use `~/.claude/`.
+**If NOT found (and in Claude Code):** "First-time Astra — running setup." Execute `/astra:setup` inline, then continue.
 
 ### 0b. Check project setup
 
-Check if project root `CLAUDE.md` contains `<!-- astra:managed -->`.
+Check if project root `CLAUDE.md` (or `.cursorrules` in Cursor) contains `<!-- astra:managed -->`.
 **If NOT found:** "Project not set up — running init." Execute `/astra:init` inline, then continue.
 
 ### 0c. Check for resumption (early — before loading context)
