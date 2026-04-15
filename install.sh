@@ -58,7 +58,6 @@ done
 # ─── Prerequisites ─────────────────────────────────────────────────
 
 command -v git >/dev/null 2>&1 || { err "git is required. Install it and try again."; exit 1; }
-command -v python3 >/dev/null 2>&1 || { err "python3 is required. Install it and try again."; exit 1; }
 
 # ─── Uninstall ──────────────────────────────────────────────────────
 
@@ -67,48 +66,32 @@ if [ "$UNINSTALL" = true ]; then
   echo -e "${BOLD}Uninstalling Astra...${RESET}"
   echo ""
 
-  # Deregister plugin
-  local_plugins="$HOME/.claude/plugins/installed_plugins.json"
-  local_settings="$HOME/.claude/settings.json"
-
-  if [ -f "$local_plugins" ]; then
-    python3 - "$local_plugins" <<'PY'
-import json, sys
-path = sys.argv[1]
-try:
-    with open(path) as f: data = json.load(f)
-    data.get("plugins", {}).pop("astra@local", None)
-    with open(path, "w") as f: json.dump(data, f, indent=2)
-except: pass
-PY
-    ok "Plugin deregistered"
-  fi
-
-  if [ -f "$local_settings" ]; then
-    python3 - "$local_settings" <<'PY'
-import json, sys
-path = sys.argv[1]
-try:
-    with open(path) as f: data = json.load(f)
-    data.get("enabledPlugins", {}).pop("astra@local", None)
-    with open(path, "w") as f: json.dump(data, f, indent=2)
-except: pass
-PY
-    ok "Plugin disabled"
-  fi
-
-  # Remove Cursor plugin files
+  # Remove Cursor plugin files and JSON registration
   cursor_target="$HOME/.cursor/plugins/astra"
   if [ -d "$cursor_target" ] || [ -L "$cursor_target" ]; then
     rm -rf "$cursor_target"
     ok "Removed Cursor plugin files"
   fi
 
-  # Remove legacy wrapper script
-  [ -f "$HOME/.local/bin/claude-astra" ] && rm -f "$HOME/.local/bin/claude-astra" && ok "Removed legacy wrapper"
+  if command -v python3 >/dev/null 2>&1; then
+    for jsonfile in "$HOME/.claude/plugins/installed_plugins.json" "$HOME/.claude/settings.json"; do
+      [ -f "$jsonfile" ] && python3 - "$jsonfile" <<'PY'
+import json, sys
+path = sys.argv[1]
+try:
+    with open(path) as f: data = json.load(f)
+    data.get("plugins", {}).pop("astra@local", None)
+    data.get("enabledPlugins", {}).pop("astra@local", None)
+    with open(path, "w") as f: json.dump(data, f, indent=2)
+except: pass
+PY
+    done
+    ok "Cursor plugin deregistered"
+  fi
 
-  # Remove legacy shell aliases
-  for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile" "$HOME/.zprofile" "$HOME/.bash_profile" "$HOME/.config/fish/config.fish"; do
+  # Remove legacy artifacts
+  [ -f "$HOME/.local/bin/claude-astra" ] && rm -f "$HOME/.local/bin/claude-astra" && ok "Removed legacy wrapper"
+  for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile" "$HOME/.zprofile" "$HOME/.bash_profile"; do
     if [ -f "$rc" ] && grep -q 'plugin-dir.*astra' "$rc" 2>/dev/null; then
       sed -i.bak '/plugin-dir.*astra/d' "$rc"
       sed -i.bak '/# Astra plugin/d' "$rc"
@@ -121,7 +104,10 @@ PY
   warn "Plugin files at $ASTRA_DIR were NOT removed (you may have local changes)."
   warn "To fully remove: rm -rf $ASTRA_DIR"
   echo ""
-  ok "Astra uninstalled. Restart your editor."
+  info "For Claude Code, also run inside any Claude session:"
+  echo "    /plugin uninstall astra@local"
+  echo ""
+  ok "Astra uninstalled."
   exit 0
 fi
 
@@ -182,19 +168,41 @@ else
   ok "Astra cloned"
 fi
 
-# ─── Step 2: Register plugin ───────────────────────────────────────
-# Same registration for both Claude Code and Cursor — both read
-# ~/.claude/plugins/installed_plugins.json and ~/.claude/settings.json
+# ─── Step 2: Claude Code ─────────────────────────────────────────────
+# Claude Code uses /plugin marketplace — can't be automated from bash.
+# The installer downloads the code; the user runs two commands once.
 
-register_plugin() {
-  local install_path="$1"
-  local plugins_json="$HOME/.claude/plugins/installed_plugins.json"
-  local settings_json="$HOME/.claude/settings.json"
+if [ "$HAS_CLAUDE" = true ]; then
+  ok "Claude Code: plugin files ready at $ASTRA_DIR"
+fi
 
-  mkdir -p "$HOME/.claude/plugins"
+# ─── Step 3: Cursor ──────────────────────────────────────────────────
+# Cursor reads ~/.claude/plugins/installed_plugins.json — can be automated.
 
-  # Register in installed_plugins.json (safe for multiple calls with different paths)
-  python3 - "$plugins_json" "$install_path" <<'PY'
+if [ "$HAS_CURSOR" = true ]; then
+  info "Configuring Cursor..."
+
+  command -v python3 >/dev/null 2>&1 || { warn "python3 required for Cursor setup. Skipping."; }
+
+  if command -v python3 >/dev/null 2>&1; then
+    cursor_target="$HOME/.cursor/plugins/astra"
+
+    if [ "$DEV_MODE" = true ]; then
+      rm -rf "$cursor_target"
+      mkdir -p "$(dirname "$cursor_target")"
+      ln -sf "$ASTRA_DIR" "$cursor_target"
+    else
+      rm -rf "$cursor_target"
+      mkdir -p "$cursor_target"
+      for item in .cursor-plugin commands agents skills .mcp.json; do
+        [ -e "$ASTRA_DIR/$item" ] && cp -R "$ASTRA_DIR/$item" "$cursor_target/"
+      done
+    fi
+
+    # Register in installed_plugins.json
+    plugins_json="$HOME/.claude/plugins/installed_plugins.json"
+    mkdir -p "$HOME/.claude/plugins"
+    python3 - "$plugins_json" "$cursor_target" <<'PY'
 import json, os, sys
 path, ipath = sys.argv[1], sys.argv[2]
 data = {}
@@ -204,7 +212,6 @@ if os.path.exists(path):
     except: pass
 plugins = data.get("plugins", {})
 entries = plugins.get("astra@local", [])
-# Remove any existing entry with the same installPath, then add it
 entries = [e for e in entries if not (isinstance(e, dict) and e.get("installPath") == ipath)]
 entries.insert(0, {"scope": "user", "installPath": ipath})
 plugins["astra@local"] = entries
@@ -213,8 +220,9 @@ os.makedirs(os.path.dirname(path), exist_ok=True)
 with open(path, "w") as f: json.dump(data, f, indent=2)
 PY
 
-  # Enable in settings.json
-  python3 - "$settings_json" <<'PY'
+    # Enable in settings.json
+    settings_json="$HOME/.claude/settings.json"
+    python3 - "$settings_json" <<'PY'
 import json, os, sys
 path = sys.argv[1]
 data = {}
@@ -227,36 +235,8 @@ os.makedirs(os.path.dirname(path), exist_ok=True)
 with open(path, "w") as f: json.dump(data, f, indent=2)
 PY
 
-  ok "Plugin registered and enabled"
-}
-
-# ─── Step 3: Editor-specific setup ─────────────────────────────────
-
-if [ "$HAS_CLAUDE" = true ]; then
-  info "Configuring Claude Code..."
-  register_plugin "$ASTRA_DIR"
-  ok "Claude Code configured (plugin: $ASTRA_DIR)"
-fi
-
-if [ "$HAS_CURSOR" = true ]; then
-  info "Configuring Cursor..."
-
-  cursor_target="$HOME/.cursor/plugins/astra"
-
-  if [ "$DEV_MODE" = true ]; then
-    rm -rf "$cursor_target"
-    mkdir -p "$(dirname "$cursor_target")"
-    ln -sf "$ASTRA_DIR" "$cursor_target"
-  else
-    rm -rf "$cursor_target"
-    mkdir -p "$cursor_target"
-    for item in .cursor-plugin commands agents skills .mcp.json; do
-      [ -e "$ASTRA_DIR/$item" ] && cp -R "$ASTRA_DIR/$item" "$cursor_target/"
-    done
+    ok "Cursor configured (auto-registered)"
   fi
-
-  register_plugin "$cursor_target"
-  ok "Cursor configured (plugin: $cursor_target)"
 fi
 
 # ─── Done ───────────────────────────────────────────────────────────
@@ -266,10 +246,16 @@ echo -e "${BOLD}${GREEN}  Astra installed successfully!${RESET}"
 echo ""
 
 if [ "$HAS_CLAUDE" = true ]; then
-  echo -e "  ${BOLD}Claude Code (CLI, Desktop, IDE extensions):${RESET}"
-  echo "    1. Open any project with Claude Code"
-  echo "    2. First time? Type: /astra:setup"
-  echo "    3. Build anything: /astra:forge \"your feature\""
+  echo -e "  ${BOLD}Claude Code (CLI + Desktop + IDE):${RESET}"
+  echo ""
+  echo "    Run these two commands once inside Claude Code:"
+  echo ""
+  echo -e "    ${CYAN}/plugin marketplace add $ASTRA_DIR${RESET}"
+  echo -e "    ${CYAN}/plugin install astra@local${RESET}"
+  echo ""
+  echo "    Then in any project:"
+  echo "      /astra:setup       (first time per project)"
+  echo "      /astra:forge \"feature description\""
   echo ""
 fi
 
