@@ -28,12 +28,14 @@ err()   { echo -e "${BOLD}${RED}✗${RESET} $1"; }
 FORCE_CLAUDE=false
 FORCE_CURSOR=false
 UNINSTALL=false
+PURGE=false
 
 for arg in "$@"; do
   case "$arg" in
     --claude)    FORCE_CLAUDE=true ;;
     --cursor)    FORCE_CURSOR=true ;;
     --uninstall) UNINSTALL=true ;;
+    --purge)     UNINSTALL=true; PURGE=true ;;
     --help|-h)
       echo "Astra Installer"
       echo ""
@@ -42,6 +44,7 @@ for arg in "$@"; do
       echo "  install.sh --claude      Install for Claude Code only"
       echo "  install.sh --cursor      Install for Cursor only"
       echo "  install.sh --uninstall   Remove Astra from all editors"
+      echo "  install.sh --purge       Uninstall + delete ~/astra entirely"
       echo ""
       echo "Environment:"
       echo "  ASTRA_DIR   Install location (default: ~/astra)"
@@ -80,8 +83,28 @@ if [ "$UNINSTALL" = true ]; then
     fi
   done
 
-  echo ""
-  warn "Plugin source at $ASTRA_DIR not removed. To delete: rm -rf $ASTRA_DIR"
+  # Clean stale JSON entries (from older installer versions)
+  if command -v python3 >/dev/null 2>&1; then
+    for jsonfile in "$HOME/.claude/plugins/installed_plugins.json" "$HOME/.claude/settings.json"; do
+      [ -f "$jsonfile" ] && python3 -c "
+import json, sys
+with open(sys.argv[1]) as f: d = json.load(f)
+d.get('plugins', {}).pop('astra@local', None)
+d.get('enabledPlugins', {}).pop('astra@local', None)
+with open(sys.argv[1], 'w') as f: json.dump(d, f, indent=2)
+" "$jsonfile" 2>/dev/null
+    done
+  fi
+
+  # Purge: delete source directory
+  if [ "$PURGE" = true ]; then
+    rm -rf "$ASTRA_DIR"
+    ok "Deleted $ASTRA_DIR"
+  else
+    echo ""
+    warn "Plugin source at $ASTRA_DIR not removed. Use --purge to delete everything."
+  fi
+
   echo ""
   ok "Astra uninstalled."
   exit 0
