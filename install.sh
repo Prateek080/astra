@@ -253,6 +253,16 @@ install_claude() {
   if grep -q 'plugin-dir.*astra' "$shell_rc" 2>/dev/null; then
     ok "Claude Code already configured in $(basename "$shell_rc")"
   else
+    # Verify we can write to the file
+    if ! touch "$shell_rc" 2>/dev/null; then
+      warn "Permission denied: cannot write to $shell_rc"
+      warn "Run manually:"
+      echo ""
+      echo "  echo '$alias_line' >> $shell_rc"
+      echo ""
+      warn "Or use sudo: sudo bash install.sh --claude"
+      return
+    fi
     echo "" >> "$shell_rc"
     echo "# Astra plugin" >> "$shell_rc"
     echo "$alias_line" >> "$shell_rc"
