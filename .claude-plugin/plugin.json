@@ -16,6 +16,5 @@
     "./agents/reviewer.md",
     "./agents/debugger.md"
   ],
-  "skills": "./skills/",
-  "hooks": "./hooks/"
+  "skills": "./skills/"
 }

@@ -89,6 +89,12 @@ PY
     ok "Cursor plugin deregistered"
   fi
 
+  # Uninstall Claude Code plugin via CLI
+  if command -v claude >/dev/null 2>&1; then
+    claude plugin uninstall astra@local 2>/dev/null && ok "Claude Code plugin uninstalled" || true
+    claude plugin marketplace remove local 2>/dev/null && ok "Local marketplace removed" || true
+  fi
+
   # Remove legacy artifacts
   [ -f "$HOME/.local/bin/claude-astra" ] && rm -f "$HOME/.local/bin/claude-astra" && ok "Removed legacy wrapper"
   for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile" "$HOME/.zprofile" "$HOME/.bash_profile"; do
@@ -103,9 +109,6 @@ PY
   echo ""
   warn "Plugin files at $ASTRA_DIR were NOT removed (you may have local changes)."
   warn "To fully remove: rm -rf $ASTRA_DIR"
-  echo ""
-  info "For Claude Code, also run inside any Claude session:"
-  echo "    /plugin uninstall astra@local"
   echo ""
   ok "Astra uninstalled."
   exit 0
@@ -169,11 +172,26 @@ else
 fi
 
 # ─── Step 2: Claude Code ─────────────────────────────────────────────
-# Claude Code uses /plugin marketplace — can't be automated from bash.
-# The installer downloads the code; the user runs two commands once.
+# Register as local marketplace and install plugin via CLI subcommands.
 
 if [ "$HAS_CLAUDE" = true ]; then
-  ok "Claude Code: plugin files ready at $ASTRA_DIR"
+  info "Configuring Claude Code..."
+
+  # Add as local marketplace (idempotent — re-adding updates it)
+  if claude plugin marketplace add "$ASTRA_DIR" 2>/dev/null; then
+    ok "Marketplace registered: $ASTRA_DIR"
+  else
+    warn "Could not register marketplace (is Claude Code installed?)"
+  fi
+
+  # Install the plugin from the local marketplace
+  if claude plugin install astra@local 2>/dev/null; then
+    ok "Claude Code configured (CLI + Desktop + IDE)"
+  else
+    # May already be installed — try enabling
+    claude plugin enable astra@local 2>/dev/null && ok "Claude Code plugin enabled" || \
+      warn "Could not install plugin. Run manually: claude plugin install astra@local"
+  fi
 fi
 
 # ─── Step 3: Cursor ──────────────────────────────────────────────────
@@ -247,15 +265,9 @@ echo ""
 
 if [ "$HAS_CLAUDE" = true ]; then
   echo -e "  ${BOLD}Claude Code (CLI + Desktop + IDE):${RESET}"
-  echo ""
-  echo "    Run these two commands once inside Claude Code:"
-  echo ""
-  echo -e "    ${CYAN}/plugin marketplace add $ASTRA_DIR${RESET}"
-  echo -e "    ${CYAN}/plugin install astra@local${RESET}"
-  echo ""
-  echo "    Then in any project:"
-  echo "      /astra:setup       (first time per project)"
-  echo "      /astra:forge \"feature description\""
+  echo "    1. Open any project with Claude Code"
+  echo "    2. First time? Type: /astra:setup"
+  echo "    3. Build anything: /astra:forge \"your feature\""
   echo ""
 fi
 
