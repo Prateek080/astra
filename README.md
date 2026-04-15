@@ -52,7 +52,7 @@ curl -fsSL https://raw.githubusercontent.com/Prateek080/astra/main/install.sh | 
 
 The installer:
 1. Clones/updates Astra to `~/astra`
-2. Configures Claude Code (shell alias) and/or Cursor (plugin registration)
+2. Configures Claude Code (marketplace + plugin install) and/or Cursor (file copy)
 3. Installs `astra-forge` CLI via pipx/pip (if Python 3.10+ found)
 4. Reports token configuration status
 
@@ -92,10 +92,13 @@ pip install ~/astra
 
 ```bash
 # Update to latest
-cd ~/astra && git pull && pip install ~/astra
+cd ~/astra && git pull && bash install.sh
 
-# Uninstall
-~/astra/install.sh --uninstall
+# Uninstall (keep source files)
+bash ~/astra/install.sh --uninstall
+
+# Uninstall + delete everything
+bash ~/astra/install.sh --purge
 ```
 
 </details>
