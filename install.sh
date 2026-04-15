@@ -55,41 +55,24 @@ for arg in "$@"; do
   esac
 done
 
+# ─── Prerequisites ─────────────────────────────────────────────────
+
+command -v git >/dev/null 2>&1 || { err "git is required. Install it and try again."; exit 1; }
+command -v python3 >/dev/null 2>&1 || { err "python3 is required. Install it and try again."; exit 1; }
+
 # ─── Uninstall ──────────────────────────────────────────────────────
 
-uninstall_claude() {
-  info "Removing Claude Code configuration..."
+if [ "$UNINSTALL" = true ]; then
+  echo ""
+  echo -e "${BOLD}Uninstalling Astra...${RESET}"
+  echo ""
 
-  # Remove shell alias
-  for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.config/fish/config.fish"; do
-    if [ -f "$rc" ]; then
-      if grep -q 'plugin-dir.*astra' "$rc" 2>/dev/null; then
-        sed -i.bak '/plugin-dir.*astra/d' "$rc"
-        rm -f "${rc}.bak"
-        ok "Removed alias from $(basename "$rc")"
-      fi
-    fi
-  done
+  # Deregister plugin
+  local_plugins="$HOME/.claude/plugins/installed_plugins.json"
+  local_settings="$HOME/.claude/settings.json"
 
-  ok "Claude Code configuration removed"
-}
-
-uninstall_cursor() {
-  info "Removing Cursor configuration..."
-
-  local target="$HOME/.cursor/plugins/astra"
-  local plugins_json="$HOME/.claude/plugins/installed_plugins.json"
-  local settings_json="$HOME/.claude/settings.json"
-
-  # Remove plugin directory
-  if [ -d "$target" ] || [ -L "$target" ]; then
-    rm -rf "$target"
-    ok "Removed plugin files"
-  fi
-
-  # Deregister from installed_plugins.json
-  if [ -f "$plugins_json" ] && command -v python3 >/dev/null 2>&1; then
-    python3 - "$plugins_json" <<'PY'
+  if [ -f "$local_plugins" ]; then
+    python3 - "$local_plugins" <<'PY'
 import json, sys
 path = sys.argv[1]
 try:
@@ -98,11 +81,11 @@ try:
     with open(path, "w") as f: json.dump(data, f, indent=2)
 except: pass
 PY
+    ok "Plugin deregistered"
   fi
 
-  # Disable in settings.json
-  if [ -f "$settings_json" ] && command -v python3 >/dev/null 2>&1; then
-    python3 - "$settings_json" <<'PY'
+  if [ -f "$local_settings" ]; then
+    python3 - "$local_settings" <<'PY'
 import json, sys
 path = sys.argv[1]
 try:
@@ -111,24 +94,34 @@ try:
     with open(path, "w") as f: json.dump(data, f, indent=2)
 except: pass
 PY
+    ok "Plugin disabled"
   fi
 
-  ok "Cursor configuration removed"
-}
+  # Remove Cursor plugin files
+  cursor_target="$HOME/.cursor/plugins/astra"
+  if [ -d "$cursor_target" ] || [ -L "$cursor_target" ]; then
+    rm -rf "$cursor_target"
+    ok "Removed Cursor plugin files"
+  fi
 
-if [ "$UNINSTALL" = true ]; then
-  echo ""
-  echo -e "${BOLD}Uninstalling Astra...${RESET}"
-  echo ""
+  # Remove legacy wrapper script
+  [ -f "$HOME/.local/bin/claude-astra" ] && rm -f "$HOME/.local/bin/claude-astra" && ok "Removed legacy wrapper"
 
-  uninstall_claude
-  uninstall_cursor
+  # Remove legacy shell aliases
+  for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile" "$HOME/.zprofile" "$HOME/.bash_profile" "$HOME/.config/fish/config.fish"; do
+    if [ -f "$rc" ] && grep -q 'plugin-dir.*astra' "$rc" 2>/dev/null; then
+      sed -i.bak '/plugin-dir.*astra/d' "$rc"
+      sed -i.bak '/# Astra plugin/d' "$rc"
+      rm -f "${rc}.bak"
+      ok "Removed legacy alias from $(basename "$rc")"
+    fi
+  done
 
   echo ""
   warn "Plugin files at $ASTRA_DIR were NOT removed (you may have local changes)."
   warn "To fully remove: rm -rf $ASTRA_DIR"
   echo ""
-  ok "Astra uninstalled. Restart your editor to complete removal."
+  ok "Astra uninstalled. Restart your editor."
   exit 0
 fi
 
@@ -185,126 +178,23 @@ if [ -d "$ASTRA_DIR/.git" ]; then
   ok "Astra updated"
 else
   info "Cloning Astra to $ASTRA_DIR..."
-  command -v git >/dev/null 2>&1 || { err "git is required. Install it and try again."; exit 1; }
   git clone --quiet "$REPO_URL" "$ASTRA_DIR"
   ok "Astra cloned"
 fi
 
-# ─── Step 2: Install for Claude Code ───────────────────────────────
+# ─── Step 2: Register plugin ───────────────────────────────────────
+# Same registration for both Claude Code and Cursor — both read
+# ~/.claude/plugins/installed_plugins.json and ~/.claude/settings.json
 
-install_claude() {
-  info "Configuring Claude Code..."
-
-  local shell_rc="" is_fish=false
-
-  # Step 1: Detect shell from $SHELL
-  case "${SHELL:-}" in
-    */zsh)  shell_rc="$HOME/.zshrc" ;;
-    */bash) shell_rc="$HOME/.bashrc" ;;
-    */fish) shell_rc="$HOME/.config/fish/config.fish"; is_fish=true ;;
-  esac
-
-  # Step 2: If detected file doesn't exist, try common alternatives
-  if [ -n "$shell_rc" ] && [ ! -f "$shell_rc" ]; then
-    case "${SHELL:-}" in
-      */zsh)
-        for alt in "$HOME/.zprofile" "$HOME/.profile"; do
-          [ -f "$alt" ] && shell_rc="$alt" && break
-        done
-        ;;
-      */bash)
-        for alt in "$HOME/.bash_profile" "$HOME/.profile"; do
-          [ -f "$alt" ] && shell_rc="$alt" && break
-        done
-        ;;
-    esac
-  fi
-
-  # Step 3: If $SHELL not set, probe for existing rc files
-  if [ -z "$shell_rc" ]; then
-    for candidate in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.zprofile" "$HOME/.bash_profile" "$HOME/.profile"; do
-      [ -f "$candidate" ] && shell_rc="$candidate" && break
-    done
-  fi
-
-  # Step 4: Still nothing — create the appropriate rc file for the detected shell
-  if [ -z "$shell_rc" ]; then
-    case "${SHELL:-}" in
-      */zsh)  shell_rc="$HOME/.zshrc" ;;
-      */bash) shell_rc="$HOME/.bashrc" ;;
-      */fish) shell_rc="$HOME/.config/fish/config.fish"; is_fish=true ;;
-      *)      shell_rc="$HOME/.profile" ;;  # POSIX fallback
-    esac
-    info "Creating $(basename "$shell_rc") (no existing shell config found)"
-  fi
-
-  # Ensure parent directory exists (needed for fish)
-  mkdir -p "$(dirname "$shell_rc")"
-
-  # Build alias line (fish uses different syntax)
-  local alias_line
-  if [ "$is_fish" = true ]; then
-    alias_line="alias claude \"claude --plugin-dir $ASTRA_DIR\""
-  else
-    alias_line="alias claude=\"claude --plugin-dir $ASTRA_DIR\""
-  fi
-
-  # Check if already configured
-  if grep -q 'plugin-dir.*astra' "$shell_rc" 2>/dev/null; then
-    ok "Claude Code already configured in $(basename "$shell_rc")"
-  else
-    # Verify we can write to the file
-    if ! touch "$shell_rc" 2>/dev/null; then
-      warn "Permission denied: cannot write to $shell_rc"
-      warn "Run manually:"
-      echo ""
-      echo "  echo '$alias_line' >> $shell_rc"
-      echo ""
-      warn "Or use sudo: sudo bash install.sh --claude"
-      return
-    fi
-    echo "" >> "$shell_rc"
-    echo "# Astra plugin" >> "$shell_rc"
-    echo "$alias_line" >> "$shell_rc"
-    ok "Added alias to $(basename "$shell_rc")"
-  fi
-}
-
-if [ "$HAS_CLAUDE" = true ]; then
-  install_claude
-fi
-
-# ─── Step 3: Install for Cursor ────────────────────────────────────
-
-install_cursor() {
-  info "Configuring Cursor..."
-
-  command -v python3 >/dev/null 2>&1 || { warn "python3 required for Cursor setup. Skipping."; return; }
-
-  local target="$HOME/.cursor/plugins/astra"
+register_plugin() {
+  local install_path="$1"
   local plugins_json="$HOME/.claude/plugins/installed_plugins.json"
   local settings_json="$HOME/.claude/settings.json"
 
-  # Copy or symlink plugin files
-  local components=(.cursor-plugin commands agents skills .mcp.json)
-
-  if [ "$DEV_MODE" = true ]; then
-    rm -rf "$target"
-    mkdir -p "$(dirname "$target")"
-    ln -sf "$ASTRA_DIR" "$target"
-  else
-    rm -rf "$target"
-    mkdir -p "$target"
-    for item in "${components[@]}"; do
-      if [ -e "$ASTRA_DIR/$item" ]; then
-        cp -R "$ASTRA_DIR/$item" "$target/"
-      fi
-    done
-  fi
-
-  # Register plugin
   mkdir -p "$HOME/.claude/plugins"
-  python3 - "$plugins_json" "$target" <<'PY'
+
+  # Register in installed_plugins.json
+  python3 - "$plugins_json" "$install_path" <<'PY'
 import json, os, sys
 path, ipath = sys.argv[1], sys.argv[2]
 data = {}
@@ -322,7 +212,7 @@ os.makedirs(os.path.dirname(path), exist_ok=True)
 with open(path, "w") as f: json.dump(data, f, indent=2)
 PY
 
-  # Enable plugin
+  # Enable in settings.json
   python3 - "$settings_json" <<'PY'
 import json, os, sys
 path = sys.argv[1]
@@ -336,57 +226,37 @@ os.makedirs(os.path.dirname(path), exist_ok=True)
 with open(path, "w") as f: json.dump(data, f, indent=2)
 PY
 
-  ok "Cursor configured"
+  ok "Plugin registered and enabled"
 }
 
-if [ "$HAS_CURSOR" = true ]; then
-  install_cursor
+# ─── Step 3: Editor-specific setup ─────────────────────────────────
+
+if [ "$HAS_CLAUDE" = true ]; then
+  info "Configuring Claude Code..."
+  register_plugin "$ASTRA_DIR"
+  ok "Claude Code configured (plugin: $ASTRA_DIR)"
 fi
 
-# ─── Step 4: Install Python orchestrator (optional) ────────────────
+if [ "$HAS_CURSOR" = true ]; then
+  info "Configuring Cursor..."
 
-install_orchestrator() {
-  if ! command -v python3 >/dev/null 2>&1; then
-    warn "Python 3 not found. SDK orchestrator (astra-forge) will not be available."
-    warn "The markdown-based /astra:forge still works without Python."
-    return
-  fi
+  cursor_target="$HOME/.cursor/plugins/astra"
 
-  PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-
-  if ! python3 -c "import sys; exit(0 if sys.version_info >= (3, 10) else 1)" 2>/dev/null; then
-    warn "Python $PY_VERSION found, but 3.10+ required for the SDK orchestrator."
-    return
-  fi
-
-  info "Setting up Python orchestrator (astra-forge)..."
-
-  if command -v pipx >/dev/null 2>&1; then
-    pipx install "$ASTRA_DIR" --force --quiet 2>/dev/null && ok "Installed astra-forge via pipx" || {
-      # Fallback to pip if pipx fails
-      python3 -m pip install --user "$ASTRA_DIR" --quiet 2>/dev/null && ok "Installed astra-forge via pip" || \
-        warn "Could not install astra-forge. Install manually: pip install $ASTRA_DIR"
-    }
+  if [ "$DEV_MODE" = true ]; then
+    rm -rf "$cursor_target"
+    mkdir -p "$(dirname "$cursor_target")"
+    ln -sf "$ASTRA_DIR" "$cursor_target"
   else
-    python3 -m pip install --user "$ASTRA_DIR" --quiet --break-system-packages 2>/dev/null && ok "Installed astra-forge via pip" || {
-      python3 -m pip install --user "$ASTRA_DIR" --quiet 2>/dev/null && ok "Installed astra-forge via pip" || \
-        warn "Could not install astra-forge. Install manually: pip install $ASTRA_DIR"
-    }
+    rm -rf "$cursor_target"
+    mkdir -p "$cursor_target"
+    for item in .cursor-plugin commands agents skills .mcp.json; do
+      [ -e "$ASTRA_DIR/$item" ] && cp -R "$ASTRA_DIR/$item" "$cursor_target/"
+    done
   fi
 
-  # Check token configuration
-  if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-    info "Note: Set ANTHROPIC_API_KEY for the SDK orchestrator"
-  fi
-  if [ -z "${GITHUB_TOKEN:-}" ]; then
-    info "Note: Set GITHUB_TOKEN for GitHub MCP integration (optional)"
-  fi
-  if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
-    info "Note: Set SLACK_WEBHOOK_URL for Slack notifications (optional)"
-  fi
-}
-
-install_orchestrator
+  register_plugin "$cursor_target"
+  ok "Cursor configured (plugin: $cursor_target)"
+fi
 
 # ─── Done ───────────────────────────────────────────────────────────
 
@@ -395,10 +265,10 @@ echo -e "${BOLD}${GREEN}  Astra installed successfully!${RESET}"
 echo ""
 
 if [ "$HAS_CLAUDE" = true ]; then
-  echo -e "  ${BOLD}Claude Code:${RESET}"
-  echo "    1. Restart your terminal (or run: source ~/.zshrc)"
-  echo "    2. Open any project: claude"
-  echo "    3. Run: /astra:setup"
+  echo -e "  ${BOLD}Claude Code (CLI, Desktop, IDE extensions):${RESET}"
+  echo "    1. Open any project with Claude Code"
+  echo "    2. First time? Type: /astra:setup"
+  echo "    3. Build anything: /astra:forge \"your feature\""
   echo ""
 fi
 
@@ -410,14 +280,7 @@ if [ "$HAS_CURSOR" = true ]; then
   echo ""
 fi
 
-if command -v astra-forge >/dev/null 2>&1; then
-  echo -e "  ${BOLD}SDK Orchestrator:${RESET}"
-  echo "    astra-forge \"feature description\"    # Full autonomous pipeline"
-  echo "    astra-forge schedule list             # Manage scheduled tasks"
-  echo ""
-fi
-
-echo -e "  ${DIM}Docs: https://github.com/Prateek080/astra${RESET}"
-echo -e "  ${DIM}Update: cd ~/astra && git pull && pip install ~/astra${RESET}"
+echo -e "  ${DIM}Docs:      https://github.com/Prateek080/astra${RESET}"
+echo -e "  ${DIM}Update:    cd ~/astra && git pull && bash install.sh${RESET}"
 echo -e "  ${DIM}Uninstall: ~/astra/install.sh --uninstall${RESET}"
 echo ""
