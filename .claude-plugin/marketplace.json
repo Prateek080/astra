@@ -1,7 +1,5 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "local",
-  "description": "Astra — complete development lifecycle plugin",
   "owner": {
     "name": "Prateek Jain"
   },
@@ -10,7 +8,7 @@
       "name": "astra",
       "description": "Complete development lifecycle workflow — spec, plan, implement, review, ship, debug.",
       "category": "development",
-      "source": ".",
+      "source": "./",
       "homepage": "https://github.com/Prateek080/astra"
     }
   ]
