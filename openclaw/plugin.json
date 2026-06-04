@@ -1,0 +1,150 @@
+{
+  "id": "astra",
+  "name": "Astra for OpenClaw",
+  "description": "Complete development lifecycle workflow — spec, design, plan, architect, implement, review — with multi-model orchestration and deterministic stage-gate checks.",
+  "version": "2.0.0",
+  "kind": "workflow",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "models": {
+        "type": "object",
+        "description": "Model assignment per agent role. Each agent can use the best model for its task.",
+        "properties": {
+          "pm": {
+            "type": "string",
+            "default": "claude-sonnet-4-20250514",
+            "description": "Product manager — structured analysis, requirement writing"
+          },
+          "designer": {
+            "type": "string",
+            "default": "claude-sonnet-4-20250514",
+            "description": "UI/UX designer — component specs, design tokens"
+          },
+          "planner": {
+            "type": "string",
+            "default": "claude-sonnet-4-20250514",
+            "description": "Implementation planner — codebase analysis, phased planning"
+          },
+          "architect": {
+            "type": "string",
+            "default": "claude-sonnet-4-20250514",
+            "description": "Technical architect — API design, data models, ADRs"
+          },
+          "coder": {
+            "type": "string",
+            "default": "kimi-k2.5:cloud",
+            "description": "Code implementation — delegates to Aider for edits"
+          },
+          "reviewer": {
+            "type": "string",
+            "default": "claude-sonnet-4-20250514",
+            "description": "Code reviewer — security, correctness, spec compliance"
+          },
+          "debugger": {
+            "type": "string",
+            "default": "claude-opus-4-20250515",
+            "description": "Debugger — deep reasoning for root cause analysis"
+          }
+        }
+      },
+      "reporting": {
+        "type": "object",
+        "description": "Pipeline event notifications.",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["telegram", "discord", "none"],
+            "default": "none",
+            "description": "Notification channel for pipeline events"
+          },
+          "telegramBotToken": {
+            "type": "string",
+            "description": "Telegram Bot API token (from @BotFather)"
+          },
+          "telegramChatId": {
+            "type": "string",
+            "description": "Telegram chat/group ID to send notifications to"
+          },
+          "discordWebhookUrl": {
+            "type": "string",
+            "description": "Discord webhook URL for notifications"
+          }
+        }
+      },
+      "mode": {
+        "type": "string",
+        "enum": ["full", "lite"],
+        "default": "full",
+        "description": "full = spec→design→plan→architect→implement→review. lite = spec→plan→implement→review (skips design+architect)."
+      },
+      "aider": {
+        "type": "object",
+        "description": "Aider configuration for the coder agent.",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Use Aider for code implementation (false = agent codes directly)"
+          },
+          "model": {
+            "type": "string",
+            "default": "kimi-k2.5:cloud",
+            "description": "Model for Aider to use (overrides models.coder when Aider is enabled)"
+          },
+          "extraArgs": {
+            "type": "string",
+            "default": "",
+            "description": "Additional CLI arguments to pass to Aider"
+          }
+        }
+      },
+      "graphify": {
+        "type": "object",
+        "description": "Knowledge graph configuration for codebase context.",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Use graphify for codebase context (false = agents scan manually)"
+          },
+          "updateInterval": {
+            "type": "string",
+            "default": "8h",
+            "description": "How often to rebuild the graph (cron interval)"
+          },
+          "scope": {
+            "type": "string",
+            "default": ".",
+            "description": "Directory to scan (default: project root, use 'src/' for large repos)"
+          }
+        }
+      },
+      "cron": {
+        "type": "object",
+        "description": "Cron schedule configuration.",
+        "properties": {
+          "buildMarathon": {
+            "type": "string",
+            "default": "0 5-23 * * *",
+            "description": "Main pipeline heartbeat — check progress, advance phases"
+          },
+          "continuousBuild": {
+            "type": "string",
+            "default": "0 */2 * * *",
+            "description": "Lighter check — verify nothing is stalled"
+          },
+          "graphUpdate": {
+            "type": "string",
+            "default": "0 */8 * * *",
+            "description": "Rebuild graphify knowledge graph"
+          }
+        }
+      }
+    }
+  },
+  "skills": ["../skills/"],
+  "agents": "./AGENTS.md",
+  "heartbeat": "./HEARTBEAT.md",
+  "bootstrap": "./BOOTSTRAP.md"
+}

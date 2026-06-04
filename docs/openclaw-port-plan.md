@@ -1,6 +1,6 @@
 # Astra → OpenClaw Port: Exhaustive Change List
 
-**Status:** Planning only — not implemented
+**Status:** Implemented — all files under `openclaw/` subdirectory (see §19)
 **Date:** 2026-04-14 (updated with Astra v2 SDK orchestrator mappings)
 **Context:** Port Astra's development lifecycle agents from Claude Code to OpenClaw, enabling multi-model orchestration where each agent can use the best model for its role. Reference architecture: JobCopilot cron-driven 3-phase pipeline diagram.
 
@@ -27,6 +27,8 @@
 15. [File Structure Comparison](#15-file-structure-comparison)
 16. [Migration Order](#16-migration-order)
 17. [Open Questions](#17-open-questions)
+18. [Astra v2 SDK → OpenClaw Mapping](#18-astra-v2-sdk--openclaw-mapping-new)
+19. [v2 Enhancements Update (June 2026)](#19-v2-enhancements-update-june-2026--implemented)
 
 ---
 
@@ -882,3 +884,84 @@ The v2 Python code is the shared foundation. Only the SDK-specific integration l
 | 9 | Backward compatibility | **Resolved** — Both Claude Code paths (markdown + SDK) share artifacts with OpenClaw |
 
 Remaining open: questions 2 (session management), 3 (model availability), 4 (Aider compatibility), 5 (Graphify integration), 10 (ClawHub publishing).
+
+---
+
+## 19. v2 Enhancements Update (June 2026) — IMPLEMENTED
+
+**Status:** Built — all files under `openclaw/` subdirectory. Zero side effects on Claude Code.
+
+### Enhancements incorporated since this plan was written
+
+| Enhancement | Source (Claude Code v2) | OpenClaw Implementation |
+|---|---|---|
+| Graphify knowledge graph | `skills/graphify/SKILL.md`, forge.md Step 0e | All agents use `graphify query "topic"` before reading full GRAPH_REPORT.md. HEARTBEAT.md includes graph staleness checks and `graphify . --update` triggers. |
+| Lean orchestrator pattern | forge.md forge-state.json summaries | HEARTBEAT.md saves 2-3 line summaries per stage to `.astra-state/forge-state.json`. Consolidated report at pipeline completion. |
+| Proactive context management | forge.md concrete /clear points | Translated to session isolation in OpenClaw — each agent runs in a fresh session, no context accumulation. |
+| Nightly forge / backlog queue | `orchestrator/tasks/nightly_forge.py` | HEARTBEAT.md Priority 2 reads `.astra-cache/backlog.md` and `.astra-state/queue.json` when idle. |
+| Audit trail logging | `orchestrator/hooks.py::audit_trail()` | SOUL.md instructs Dexter to log all tool calls to `.astra-cache/audit.jsonl` via PostToolUse hook. |
+| Permission profiles | `orchestrator/permissions.py` | AGENTS.md Permission Matrix defines per-agent tool access and write paths. Denied paths listed. |
+| MCP server builder | `orchestrator/mcp.py` | Not ported — OpenClaw uses its own tool system (exec, browser, node) instead of MCP. |
+| Agent memory | `orchestrator/memory.py` | All agents read/write `docs/.agent-memory/{name}.md`. SOUL.md instructs Dexter to save memory after each stage. |
+| Resume/checkpoint | `orchestrator/state.py` PipelineState | `openclaw/scripts/update_progress.py` manages `.astra-state/progress.json`. HEARTBEAT.md reads state to skip completed stages. |
+| Two-strike retry | `pipeline.py _run_stage_with_retry()` | HEARTBEAT.md retry logic: run agent, if fail retry once, if fail again report blocker and stop. |
+| Parallel stages | `pipeline.py asyncio.gather()` | HEARTBEAT.md spawns Designer + Planner simultaneously, waits for both before advancing to Architect. |
+| Consolidated run summary | forge.md Step 6d | HEARTBEAT.md wrapup stage reads forge-state.json summaries and prints structured report. |
+
+### Files created
+
+All under `openclaw/` to avoid Claude Code side effects:
+
+```
+openclaw/
+├── plugin.json               Plugin manifest with configSchema (models, reporting, cron, aider, graphify)
+├── AGENTS.md                 7 agent definitions with permission matrix
+├── SOUL.md                   Dexter orchestrator personality
+├── HEARTBEAT.md              Cron-driven state machine
+├── BOOTSTRAP.md              First-run workspace setup
+├── README.md                 Standalone documentation
+├── install.sh                OpenClaw-specific installer
+├── __init__.py               Package marker
+├── scripts/
+│   ├── __init__.py
+│   ├── init_requirements.py  Initialize REQUIREMENTS.md from feature
+│   ├── add_requirement.py    Add/update requirements
+│   ├── generate_summary.py   Generate PRD.md from requirements
+│   ├── add_design_spec.py    Add UI design spec (D-R{n})
+│   ├── update_design_status.py   Mark design complete
+│   ├── list_available_work.py    List work ready for implementation
+│   ├── claim_requirement.py      Claim a requirement (in_progress)
+│   ├── get_design_spec.py        Get design spec for a requirement
+│   ├── complete_requirement.py   Mark requirement as implemented
+│   ├── run_stage_eval.py         Run stage-gate checks (wraps orchestrator/checks/)
+│   ├── update_progress.py        Manage pipeline state
+│   └── report.py                 Telegram + Discord notifications
+└── templates/
+    ├── REQUIREMENTS.template.md
+    ├── DESIGN_SPECS.template.md
+    ├── PLAN.template.md
+    └── TECHNICAL.template.md
+```
+
+### Shared code (unchanged, referenced by path)
+- `orchestrator/checks/` — 24 deterministic stage-gate checks (zero modifications)
+- `skills/` — 12 methodology skills (zero modifications)
+- `rules/` — Path-scoped conventions (zero modifications)
+
+### What was NOT ported (by design)
+- **MCP servers** — OpenClaw has its own tool system, MCP not needed
+- **SDK hooks (hooks.json)** — Replaced by OpenClaw hook system + SOUL.md instructions
+- **CLI entry point (__main__.py)** — Replaced by HEARTBEAT.md cron + manual trigger
+- **Slack notifications** — Replaced by Telegram/Discord in report.py
+
+### Integration test results
+All mediator scripts verified end-to-end:
+1. `init_requirements.py` → creates REQUIREMENTS.md from template ✓
+2. `add_requirement.py` → adds R1, R2 with status tracking ✓
+3. `claim_requirement.py` → marks R1 as in_progress ✓
+4. `complete_requirement.py` → marks R1 as implemented ✓
+5. `list_available_work.py` → filters out completed/in-progress items ✓
+6. `generate_summary.py` → produces PRD.md from requirements ✓
+7. `update_progress.py` → init/update/status pipeline state ✓
+8. `report.py` → formats and sends (or dry-runs) notifications ✓
+9. `run_stage_eval.py` → wraps orchestrator/checks/* with CLI interface ✓
