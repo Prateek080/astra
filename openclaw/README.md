@@ -7,7 +7,7 @@ Multi-model development lifecycle pipeline for OpenClaw — the same Astra workf
 | Aspect | Claude Code (Astra) | OpenClaw (Astra) |
 |--------|-------------------|-----------------|
 | **Orchestrator** | `commands/forge.md` (LLM) / `orchestrator/pipeline.py` (SDK) | `HEARTBEAT.md` (cron-driven) |
-| **Models** | All Claude (inherit) | Per-agent Ollama: PM → qwen3:32b, Coder → qwen2.5-coder:32b, Debugger → deepseek-r1:70b |
+| **Models** | All Claude (inherit) | Per-agent Ollama Cloud: PM → qwen3.5:cloud, Coder → qwen3-coder-next:cloud, Debugger → deepseek-v4-pro:cloud |
 | **Agent isolation** | Sub-agents share parent | Fully isolated sessions |
 | **Code implementation** | Direct Write/Edit tools | Aider integration (configurable) |
 | **Codebase context** | `.astra-cache/context.md` | Graphify knowledge graph (query-first) |
@@ -132,13 +132,13 @@ Edit `plugin.json` → `configSchema.properties.models`:
 ```json
 {
   "models": {
-    "pm": "ollama/qwen3:32b",
-    "designer": "ollama/qwen3:32b",
-    "planner": "ollama/qwen3:32b",
-    "architect": "ollama/qwen3:32b",
-    "coder": "ollama/qwen2.5-coder:32b",
-    "reviewer": "ollama/qwen3:32b",
-    "debugger": "ollama/deepseek-r1:70b"
+    "pm": "qwen3.5:cloud",
+    "designer": "qwen3.5:cloud",
+    "planner": "qwen3.5:cloud",
+    "architect": "qwen3.5:cloud",
+    "coder": "qwen3-coder-next:cloud",
+    "reviewer": "qwen3.5:cloud",
+    "debugger": "deepseek-v4-pro:cloud"
   }
 }
 ```

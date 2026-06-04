@@ -13,38 +13,38 @@
         "properties": {
           "pm": {
             "type": "string",
-            "default": "ollama/qwen3:32b",
+            "default": "qwen3.5:cloud",
             "description": "Product manager — structured analysis, requirement writing"
           },
           "designer": {
             "type": "string",
-            "default": "ollama/qwen3:32b",
+            "default": "qwen3.5:cloud",
             "description": "UI/UX designer — component specs, design tokens"
           },
           "planner": {
             "type": "string",
-            "default": "ollama/qwen3:32b",
+            "default": "qwen3.5:cloud",
             "description": "Implementation planner — codebase analysis, phased planning"
           },
           "architect": {
             "type": "string",
-            "default": "ollama/qwen3:32b",
+            "default": "qwen3.5:cloud",
             "description": "Technical architect — API design, data models, ADRs"
           },
           "coder": {
             "type": "string",
-            "default": "ollama/qwen2.5-coder:32b",
+            "default": "qwen3-coder-next:cloud",
             "description": "Code implementation — delegates to Aider for edits"
           },
           "reviewer": {
             "type": "string",
-            "default": "ollama/qwen3:32b",
+            "default": "qwen3.5:cloud",
             "description": "Code reviewer — security, correctness, spec compliance"
           },
           "debugger": {
             "type": "string",
-            "default": "ollama/deepseek-r1:70b",
-            "description": "Debugger — deep reasoning for root cause analysis"
+            "default": "deepseek-v4-pro:cloud",
+            "description": "Debugger — 1.6T params, thinking modes for deep root cause analysis"
           }
         }
       },
@@ -89,7 +89,7 @@
           },
           "model": {
             "type": "string",
-            "default": "ollama/qwen2.5-coder:32b",
+            "default": "qwen3-coder-next:cloud",
             "description": "Model for Aider to use (overrides models.coder when Aider is enabled)"
           },
           "extraArgs": {
