@@ -83,7 +83,7 @@ graphify graph staleness → if > 24h since last update, run graphify . --update
 ## Stage Execution
 
 ### Stage: scan
-**Agent:** None (Dexter runs directly)
+**Agent:** None (Magic Knight runs directly)
 **Action:**
 ```bash
 # Preferred: graphify
@@ -183,7 +183,7 @@ python scripts/report.py --event pass --stage review --details "No critical issu
 ```
 
 ### Stage: wrapup
-**Agent:** None (Dexter runs directly)
+**Agent:** None (Magic Knight runs directly)
 **Actions:**
 1. Archive artifacts:
    ```bash
@@ -196,8 +196,8 @@ python scripts/report.py --event pass --stage review --details "No critical issu
 2. Save agent memory:
    ```bash
    # Each agent saves its own memory via docs/.agent-memory/{name}.md
-   # Dexter logs pipeline summary
-   echo "## $(date +%Y-%m-%d) — {feature} ({mode} mode, pipeline {id})" >> docs/.agent-memory/dexter.md
+   # Magic Knight logs pipeline summary
+   echo "## $(date +%Y-%m-%d) — {feature} ({mode} mode, pipeline {id})" >> docs/.agent-memory/magic-knight.md
    ```
 
 3. Create PR:
@@ -301,12 +301,12 @@ Configure via `openclaw/plugin.json` → `configSchema.cron`.
 
 ## Manual Trigger
 
-User sends message to Dexter:
+User sends message to Magic Knight:
 ```
 build: add notifications system
 ```
 
-Dexter:
+Magic Knight:
 1. Adds to `.astra-state/queue.json` with priority 1
 2. If idle → starts immediately
 3. If busy → queued (picked up when current build completes)

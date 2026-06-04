@@ -13,37 +13,37 @@
         "properties": {
           "pm": {
             "type": "string",
-            "default": "claude-sonnet-4-20250514",
+            "default": "ollama/qwen3:32b",
             "description": "Product manager — structured analysis, requirement writing"
           },
           "designer": {
             "type": "string",
-            "default": "claude-sonnet-4-20250514",
+            "default": "ollama/qwen3:32b",
             "description": "UI/UX designer — component specs, design tokens"
           },
           "planner": {
             "type": "string",
-            "default": "claude-sonnet-4-20250514",
+            "default": "ollama/qwen3:32b",
             "description": "Implementation planner — codebase analysis, phased planning"
           },
           "architect": {
             "type": "string",
-            "default": "claude-sonnet-4-20250514",
+            "default": "ollama/qwen3:32b",
             "description": "Technical architect — API design, data models, ADRs"
           },
           "coder": {
             "type": "string",
-            "default": "kimi-k2.5:cloud",
+            "default": "ollama/qwen2.5-coder:32b",
             "description": "Code implementation — delegates to Aider for edits"
           },
           "reviewer": {
             "type": "string",
-            "default": "claude-sonnet-4-20250514",
+            "default": "ollama/qwen3:32b",
             "description": "Code reviewer — security, correctness, spec compliance"
           },
           "debugger": {
             "type": "string",
-            "default": "claude-opus-4-20250515",
+            "default": "ollama/deepseek-r1:70b",
             "description": "Debugger — deep reasoning for root cause analysis"
           }
         }
@@ -89,7 +89,7 @@
           },
           "model": {
             "type": "string",
-            "default": "kimi-k2.5:cloud",
+            "default": "ollama/qwen2.5-coder:32b",
             "description": "Model for Aider to use (overrides models.coder when Aider is enabled)"
           },
           "extraArgs": {

@@ -162,9 +162,9 @@ info "Agent definitions (7 agents)"
 cp "${ASTRA_DIR}/openclaw/HEARTBEAT.md" "${DEST}/HEARTBEAT.md"
 info "HEARTBEAT orchestration"
 
-# Dexter personality
+# Magic Knight personality
 cp "${ASTRA_DIR}/openclaw/SOUL.md" "${DEST}/SOUL.md"
-info "Dexter (SOUL.md)"
+info "Magic Knight (SOUL.md)"
 
 # Bootstrap
 cp "${ASTRA_DIR}/openclaw/BOOTSTRAP.md" "${DEST}/BOOTSTRAP.md"
@@ -266,7 +266,7 @@ echo ""
 echo "  Next steps:"
 echo "    1. Configure model preferences in ${DEST}/plugin.json"
 echo "    2. In your project: run BOOTSTRAP.md to initialize workspace"
-echo "    3. Start building: send 'build: <feature>' to Dexter"
+echo "    3. Start building: send 'build: <feature>' to Magic Knight"
 echo ""
 echo "  Update Astra:"
 echo "    cd ~/astra && git pull && bash openclaw/install.sh"

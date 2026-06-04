@@ -7,7 +7,7 @@ Multi-model development lifecycle pipeline for OpenClaw — the same Astra workf
 | Aspect | Claude Code (Astra) | OpenClaw (Astra) |
 |--------|-------------------|-----------------|
 | **Orchestrator** | `commands/forge.md` (LLM) / `orchestrator/pipeline.py` (SDK) | `HEARTBEAT.md` (cron-driven) |
-| **Models** | All Claude (inherit) | Per-agent: PM → Sonnet, Coder → Kimi, Debugger → Opus |
+| **Models** | All Claude (inherit) | Per-agent Ollama: PM → qwen3:32b, Coder → qwen2.5-coder:32b, Debugger → deepseek-r1:70b |
 | **Agent isolation** | Sub-agents share parent | Fully isolated sessions |
 | **Code implementation** | Direct Write/Edit tools | Aider integration (configurable) |
 | **Codebase context** | `.astra-cache/context.md` | Graphify knowledge graph (query-first) |
@@ -41,7 +41,7 @@ bash openclaw/install.sh --uninstall                   # Remove
 openclaw/
 ├── plugin.json          Plugin manifest with model routing + configSchema
 ├── AGENTS.md            7 agent definitions (PM, Designer, Planner, Architect, Coder, Reviewer, Debugger)
-├── SOUL.md              Dexter — main orchestrator agent personality
+├── SOUL.md              Magic Knight — main orchestrator agent personality
 ├── HEARTBEAT.md         Cron-driven state machine (replaces forge.md)
 ├── BOOTSTRAP.md         First-run workspace setup
 ├── scripts/             Python mediator scripts for inter-agent data passing
@@ -76,7 +76,7 @@ These files live in the parent repo and are copied by the installer:
 
 ### Start a build
 
-Send to Dexter:
+Send to Magic Knight:
 ```
 build: add notifications system
 ```
@@ -132,13 +132,13 @@ Edit `plugin.json` → `configSchema.properties.models`:
 ```json
 {
   "models": {
-    "pm": "claude-sonnet-4-20250514",
-    "designer": "claude-sonnet-4-20250514",
-    "planner": "gemini-2.5-pro",
-    "architect": "claude-opus-4-20250515",
-    "coder": "kimi-k2.5:cloud",
-    "reviewer": "claude-sonnet-4-20250514",
-    "debugger": "claude-opus-4-20250515"
+    "pm": "ollama/qwen3:32b",
+    "designer": "ollama/qwen3:32b",
+    "planner": "ollama/qwen3:32b",
+    "architect": "ollama/qwen3:32b",
+    "coder": "ollama/qwen2.5-coder:32b",
+    "reviewer": "ollama/qwen3:32b",
+    "debugger": "ollama/deepseek-r1:70b"
   }
 }
 ```
