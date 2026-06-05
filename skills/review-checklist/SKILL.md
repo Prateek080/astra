@@ -72,6 +72,19 @@ Apply every section to the code under review. For each item, answer yes/no. Flag
 - Are ARIA roles and attributes used correctly (not overriding native semantics)?
 - Do form fields have associated `<label>` elements or `aria-labelledby`?
 
+## Visual Quality (if DESIGN.md exists with Visual Theme)
+
+- Does the implemented UI match the mood and personality defined in DESIGN.md?
+- Is the spacing consistent with the defined spacing scale (no arbitrary values)?
+- Is the typography hierarchy visually distinct (h1 vs h2 vs h3 obvious at a glance)?
+- Are micro-interactions implemented as specified (hover, active, loading, success states)?
+- Are empty states designed (not blank screens)?
+- Are error states helpful (what's wrong + how to fix it)?
+- Does the visual hierarchy guide the eye to the most important element first?
+- Does the design feel like THIS product, or could it be anyone's default template?
+- Are colors intentional and cohesive, not framework defaults?
+- Is mobile a first-class experience, not a squeezed desktop layout?
+
 ## API Design (if API changes)
 
 - Are endpoints RESTful and consistent with existing API patterns (naming, HTTP verbs, status codes)?

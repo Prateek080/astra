@@ -125,12 +125,13 @@ Legend: `🟣 agent` `📄 artifact` `🔒 gate (deterministic)` `⚙️ action`
   ║   ┃  │ ──▶ 📄 DESIGN.md           │  │ ──▶ 📄 PLAN.md              │  ┃  ║
   ║   ┃  │      D-R1, D-R2...          │  │      Phase 1..N              │  ┃  ║
   ║   ┃  │                             │  │                              │  ┃  ║
-  ║   ┃  │ ──▶ 🔒 GATE D1-D5          │  │ ──▶ 🔒 GATE P1-P4          │  ┃  ║
+  ║   ┃  │ ──▶ 🔒 GATE D1-D5+VQ       │  │ ──▶ 🔒 GATE P1-P4          │  ┃  ║
   ║   ┃  │  D1 R→D coverage            │  │  P1 R→Phase coverage        │  ┃  ║
   ║   ┃  │  D2 token usage             │  │  P2 test gate per phase     │  ┃  ║
   ║   ┃  │  D3 component states        │  │  P3 task count (1-8)        │  ┃  ║
   ║   ┃  │  D4 accessibility           │  │  P4 phase ordering          │  ┃  ║
   ║   ┃  │  D5 no orphan D-R{n}        │  │                              │  ┃  ║
+  ║   ┃  │  VQ visual quality          │  │                              │  ┃  ║
   ║   ┃  └─────────────────────────────┘  └──────────────────────────────┘  ┃  ║
   ║   ┃                                                                     ┃  ║
   ║   ┃  (asyncio.Lock protects shared state during parallel writes)        ┃  ║
@@ -254,6 +255,25 @@ SPEC.md ────▶ DESIGN.md ────▶ TECHNICAL.md ──▶ PLAN.md
   │              │                │               │             │
 Gate S1        Gate D1           Gate T1         Gate P1       Gate I4
 (relevance)    (R→D coverage)   (R→T coverage)  (R→Phase)     (tests exist)
+               Gate D2           Gate T2         Gate P2
+               (token usage)    (API complete)  (test gates)
+               Gate D3           Gate T3         Gate P3
+               (component states)(data models)  (task count)
+               Gate D4           Gate T4         Gate P4
+               (accessibility)  (error codes)   (phase order)
+               Gate D5           Gate T5
+               (no orphans)     (route conflicts)
+               Gate VQ
+               (visual quality)
+               │
+               ▼
+          ┌─────────────────────────┐
+          │  Post-Implementation   │
+          │  Visual Review          │
+          │  (Designer reviews     │
+          │   built UI for design  │
+          │   fidelity + quality)  │
+          └─────────────────────────┘
 ```
 
 ---
@@ -280,6 +300,7 @@ Gate logic:   PASS ──▶ proceed
 | **D3** | Component states documented | >=2 components <3 states |
 | **D4** | Accessibility (contrast + ARIA) | Both missing |
 | **D5** | No orphan D-R{n} | Orphan found |
+| **VQ** | Visual quality (hierarchy, spacing, personality, micro-interactions) | Generic/boring design |
 | **P1** | R{n} → Phase coverage | >=2 unmapped |
 | **P2** | Test gate per phase | >=2 phases missing |
 | **P3** | Task count (1-8 per phase) | Any phase >12 tasks |
